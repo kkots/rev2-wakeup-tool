@@ -8,7 +8,7 @@ public class AnimationEvent : IScenarioEvent
     private const string FaceUpAnimation = "CmnActBDown2Stand";
     private const string WallSplatAnimation = "CmnActWallHaritsukiGetUp";
     private const string TechAnimation = "CmnActUkemi";
-    private const string CrouchBlockingAnimation = "CmnActCrouchGuard";
+    private const string CrouchBlockingAnimation = "CmnActCrouchGuardLoop";
     private const string StandBlockingAnimation = "CmnActMidGuardLoop";
     private const string HighBlockingAnimation = "CmnActHighGuardLoop";
 
@@ -22,18 +22,18 @@ public class AnimationEvent : IScenarioEvent
     public bool IsValid =>
         ShouldCheckWakingUp || ShouldCheckWallSplat || ShouldCheckAirTech || ShouldCheckStartBlocking;
 
-    public AnimationEventTypes CheckEvent()
+    public EventAnimationInfo CheckEvent()
     {
         var animationString = MemoryReader.ReadAnimationString(2);
 
         return animationString switch
         {
-            FaceDownAnimation when ShouldCheckWakingUp => AnimationEventTypes.KDFaceDown,
-            FaceUpAnimation when ShouldCheckWakingUp => AnimationEventTypes.KDFaceUp,
-            WallSplatAnimation when ShouldCheckWallSplat => AnimationEventTypes.WallSplat,
-            TechAnimation when ShouldCheckAirTech => AnimationEventTypes.Tech,
-            CrouchBlockingAnimation or StandBlockingAnimation or HighBlockingAnimation when ShouldCheckStartBlocking => AnimationEventTypes.Blocking,
-            _ => AnimationEventTypes.None
+            FaceDownAnimation when ShouldCheckWakingUp => new EventAnimationInfo( AnimationEventTypes.KDFaceDown),
+            FaceUpAnimation when ShouldCheckWakingUp => new EventAnimationInfo(AnimationEventTypes.KDFaceUp),
+            WallSplatAnimation when ShouldCheckWallSplat => new EventAnimationInfo(AnimationEventTypes.WallSplat),
+            TechAnimation when ShouldCheckAirTech => new EventAnimationInfo(AnimationEventTypes.Tech),
+            CrouchBlockingAnimation or StandBlockingAnimation or HighBlockingAnimation when ShouldCheckStartBlocking => new EventAnimationInfo(AnimationEventTypes.Blocking),
+            _ => new EventAnimationInfo()
         };
     }
     

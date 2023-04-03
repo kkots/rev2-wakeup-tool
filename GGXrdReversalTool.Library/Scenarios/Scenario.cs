@@ -64,13 +64,13 @@ public class Scenario : IDisposable
             LogManager.Instance.WriteLine("Scenario Thread start");
             var localRunThread = true;
 
-            var oldEventType = AnimationEventTypes.None;
+            var oldEventType = new EventAnimationInfo();
 
 
             while (localRunThread)
             {
-                var eventType = _scenarioEvent.CheckEvent();
-                if (eventType != oldEventType && eventType != AnimationEventTypes.None)
+                var eventAnimationInfo = _scenarioEvent.CheckEvent();
+                if (eventAnimationInfo.EventType != oldEventType.EventType && eventAnimationInfo.EventType != AnimationEventTypes.None)
                 {
                     LogManager.Instance.WriteLine("Event Occured");
                     
@@ -78,7 +78,7 @@ public class Scenario : IDisposable
                     var currentDummy = _memoryReader.GetCurrentDummy();
                     
 
-                    var timing = GetTiming(eventType, currentDummy, _scenarioAction.Input);
+                    var timing = GetTiming(eventAnimationInfo.EventType, currentDummy, _scenarioAction.Input);
 
                     Wait(timing);
 
@@ -93,7 +93,7 @@ public class Scenario : IDisposable
                 }
                 
 
-                oldEventType = eventType;
+                oldEventType = eventAnimationInfo;
 
 
                 lock (RunThreadLock)
