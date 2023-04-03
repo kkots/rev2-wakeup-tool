@@ -59,10 +59,10 @@ public class Scenario : IDisposable
         
         
 
-        Thread scenarioThread = new Thread(() =>
+        var scenarioThread = new Thread(() =>
         {
             LogManager.Instance.WriteLine("Scenario Thread start");
-            bool localRunThread = true;
+            var localRunThread = true;
 
             var oldEventType = AnimationEventTypes.None;
 
