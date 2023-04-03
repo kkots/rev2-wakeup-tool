@@ -13,5 +13,6 @@ public interface IMemoryReader
     bool WriteInputInSlot(int slotNumber, SlotInput slotInput);
     int GetComboCount(int player);
     int GetReplayKeyCode(int player);
+    int GetBlockstun(int player);
     Process Process { get; }
 }

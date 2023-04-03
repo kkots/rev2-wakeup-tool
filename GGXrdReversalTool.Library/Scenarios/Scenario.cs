@@ -78,7 +78,7 @@ public class Scenario : IDisposable
                     var currentDummy = _memoryReader.GetCurrentDummy();
                     
 
-                    var timing = GetTiming(eventAnimationInfo.EventType, currentDummy, _scenarioAction.Input);
+                    var timing = GetTiming(eventAnimationInfo, currentDummy, _scenarioAction.Input);
 
                     Wait(timing);
 
@@ -124,10 +124,10 @@ public class Scenario : IDisposable
     }
 
     
-    private int GetTiming(AnimationEventTypes animationEventType, Character currentDummy, SlotInput scenarioActionInput)
+    private int GetTiming(EventAnimationInfo eventAnimationInfo, Character currentDummy, SlotInput scenarioActionInput)
     {
         //TODO fix why - 2 ?
-        switch (animationEventType)
+        switch (eventAnimationInfo.EventType)
         {
             case AnimationEventTypes.KDFaceUp:
                 return currentDummy.FaceUpFrames - scenarioActionInput.ReversalFrameIndex - 2;
@@ -136,14 +136,14 @@ public class Scenario : IDisposable
             case AnimationEventTypes.WallSplat:
                 return currentDummy.WallSplatWakeupTiming - scenarioActionInput.ReversalFrameIndex - 2;
             case AnimationEventTypes.Blocking:
-                return 0;
+                return eventAnimationInfo.Delay - scenarioActionInput.ReversalFrameIndex + 8;
             case AnimationEventTypes.Combo:
                 return 0;
             case AnimationEventTypes.Tech:
                 //TODO tech reversal recovery = 6?
                 return 6 - 2;
             default:
-                throw new ArgumentOutOfRangeException(nameof(animationEventType), animationEventType, null);
+                throw new ArgumentOutOfRangeException(nameof(eventAnimationInfo.EventType), eventAnimationInfo, null);
         }
     }
     private void Wait(int frames)

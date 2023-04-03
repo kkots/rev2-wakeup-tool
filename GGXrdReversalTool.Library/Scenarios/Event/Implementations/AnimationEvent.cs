@@ -19,8 +19,10 @@ public class AnimationEvent : IScenarioEvent
     public bool ShouldCheckAirTech { get; set; } = false;
     public bool ShouldCheckStartBlocking { get; set; } = false;
 
+    public bool ShouldCheckBlockstunEnding { get; set; } = false;
+
     public bool IsValid =>
-        ShouldCheckWakingUp || ShouldCheckWallSplat || ShouldCheckAirTech || ShouldCheckStartBlocking;
+        ShouldCheckWakingUp || ShouldCheckWallSplat || ShouldCheckAirTech || ShouldCheckStartBlocking || ShouldCheckBlockstunEnding;
 
     public EventAnimationInfo CheckEvent()
     {
@@ -32,7 +34,7 @@ public class AnimationEvent : IScenarioEvent
             FaceUpAnimation when ShouldCheckWakingUp => new EventAnimationInfo(AnimationEventTypes.KDFaceUp),
             WallSplatAnimation when ShouldCheckWallSplat => new EventAnimationInfo(AnimationEventTypes.WallSplat),
             TechAnimation when ShouldCheckAirTech => new EventAnimationInfo(AnimationEventTypes.Tech),
-            CrouchBlockingAnimation or StandBlockingAnimation or HighBlockingAnimation when ShouldCheckStartBlocking => new EventAnimationInfo(AnimationEventTypes.Blocking),
+            CrouchBlockingAnimation or StandBlockingAnimation or HighBlockingAnimation when ShouldCheckStartBlocking => new EventAnimationInfo(AnimationEventTypes.Blocking, MemoryReader.GetBlockstun(2)),
             _ => new EventAnimationInfo()
         };
     }
