@@ -14,9 +14,10 @@ public class AnimationEventConverter : IMultiValueConverter
         var shouldCheckWallSplat = (bool)values[1];
         var shouldCheckAirTech = (bool)values[2];
         var shouldCheckStartBlocking = (bool)values[3];
+        var shouldCheckBlockstunEnding = (bool)values[4];
 
 
-        if (!shouldCheckWakingUp && !shouldCheckWallSplat && !shouldCheckAirTech && !shouldCheckStartBlocking)
+        if (!shouldCheckWakingUp && !shouldCheckWallSplat && !shouldCheckAirTech && !shouldCheckStartBlocking && !shouldCheckBlockstunEnding)
         {
             return "Event is invalid!!!";
         }
@@ -28,7 +29,9 @@ public class AnimationEventConverter : IMultiValueConverter
             shouldCheckWakingUp ? "wakes up" : "",
             shouldCheckWallSplat ? "recovers from wall splat" : "",
             shouldCheckAirTech ? "recovers from air tech" : "",
-            shouldCheckStartBlocking ? "is starting to block" : ""
+            shouldCheckStartBlocking ? "is starting to block" : "",
+            shouldCheckBlockstunEnding ? "stops blocking" : ""
+            
         };
 
         var result = "Dummy ";
