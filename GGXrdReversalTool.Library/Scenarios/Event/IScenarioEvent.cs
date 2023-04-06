@@ -6,5 +6,5 @@ public interface IScenarioEvent
 {
     IMemoryReader MemoryReader { get; internal set; }
     bool IsValid { get; }
-    AnimationEventTypes CheckEvent();
+    EventAnimationInfo CheckEvent();
 }

@@ -6,7 +6,8 @@ public enum AnimationEventTypes
     KDFaceUp,
     KDFaceDown,
     WallSplat,
-    Blocking,
+    StartBlocking,
+    EndBlocking,
     Combo,
     Tech
 }

@@ -59,18 +59,18 @@ public class Scenario : IDisposable
         
         
 
-        Thread scenarioThread = new Thread(() =>
+        var scenarioThread = new Thread(() =>
         {
             LogManager.Instance.WriteLine("Scenario Thread start");
-            bool localRunThread = true;
+            var localRunThread = true;
 
-            var oldEventType = AnimationEventTypes.None;
+            var oldEventType = new EventAnimationInfo();
 
 
             while (localRunThread)
             {
-                var eventType = _scenarioEvent.CheckEvent();
-                if (eventType != oldEventType && eventType != AnimationEventTypes.None)
+                var eventAnimationInfo = _scenarioEvent.CheckEvent();
+                if (eventAnimationInfo.EventType != oldEventType.EventType && eventAnimationInfo.EventType != AnimationEventTypes.None)
                 {
                     LogManager.Instance.WriteLine("Event Occured");
                     
@@ -78,7 +78,7 @@ public class Scenario : IDisposable
                     var currentDummy = _memoryReader.GetCurrentDummy();
                     
 
-                    var timing = GetTiming(eventType, currentDummy, _scenarioAction.Input);
+                    var timing = GetTiming(eventAnimationInfo, currentDummy, _scenarioAction.Input);
 
                     Wait(timing);
 
@@ -93,7 +93,7 @@ public class Scenario : IDisposable
                 }
                 
 
-                oldEventType = eventType;
+                oldEventType = eventAnimationInfo;
 
 
                 lock (RunThreadLock)
@@ -124,10 +124,10 @@ public class Scenario : IDisposable
     }
 
     
-    private int GetTiming(AnimationEventTypes animationEventType, Character currentDummy, SlotInput scenarioActionInput)
+    private int GetTiming(EventAnimationInfo eventAnimationInfo, Character currentDummy, SlotInput scenarioActionInput)
     {
         //TODO fix why - 2 ?
-        switch (animationEventType)
+        switch (eventAnimationInfo.EventType)
         {
             case AnimationEventTypes.KDFaceUp:
                 return currentDummy.FaceUpFrames - scenarioActionInput.ReversalFrameIndex - 2;
@@ -135,15 +135,17 @@ public class Scenario : IDisposable
                 return currentDummy.FaceDownFrames - scenarioActionInput.ReversalFrameIndex - 2;
             case AnimationEventTypes.WallSplat:
                 return currentDummy.WallSplatWakeupTiming - scenarioActionInput.ReversalFrameIndex - 2;
-            case AnimationEventTypes.Blocking:
+            case AnimationEventTypes.StartBlocking:
                 return 0;
+            case AnimationEventTypes.EndBlocking:
+                return eventAnimationInfo.Delay - scenarioActionInput.ReversalFrameIndex + 8;
             case AnimationEventTypes.Combo:
                 return 0;
             case AnimationEventTypes.Tech:
                 //TODO tech reversal recovery = 6?
                 return 6 - 2;
             default:
-                throw new ArgumentOutOfRangeException(nameof(animationEventType), animationEventType, null);
+                throw new ArgumentOutOfRangeException(nameof(eventAnimationInfo.EventType), eventAnimationInfo, null);
         }
     }
     private void Wait(int frames)

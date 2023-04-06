@@ -26,6 +26,7 @@ public class MemoryReader : IMemoryReader
     private readonly MemoryPointer _p2ComboCountPtr = new("P2ComboCountPtr");
     private readonly MemoryPointer _p1ReplayKeyPtr = new("P1ReplayKeyPtr");
     private readonly MemoryPointer _p2ReplayKeyPtr = new("P2ReplayKeyPtr");
+    private readonly MemoryPointer _p2BlockStunPtr = new("P2BlockStunPtr");
     private const int RecordingSlotSize = 4808;
 
 
@@ -88,6 +89,16 @@ public class MemoryReader : IMemoryReader
         {
             1 => Read<int>(_p1ReplayKeyPtr),
             2 => Read<int>(_p2ReplayKeyPtr),
+            _ => throw new ArgumentException($"Player index is invalid : {player}")
+        };
+    }
+    
+    public int GetBlockstun(int player)
+    {
+        return player switch
+        {
+            1 => throw new NotImplementedException("GetBlockstun not implemented for player 1"),
+            2 => Read<int>(_p2BlockStunPtr),
             _ => throw new ArgumentException($"Player index is invalid : {player}")
         };
     }

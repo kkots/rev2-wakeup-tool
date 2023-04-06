@@ -103,6 +103,8 @@ public sealed partial class EventControl
     }
 
     private bool _shouldCheckStartBlocking;
+    
+
     public bool ShouldCheckStartBlocking
     {
         get => _shouldCheckStartBlocking;
@@ -110,6 +112,19 @@ public sealed partial class EventControl
         {
             if (value == _shouldCheckStartBlocking) return;
             _shouldCheckStartBlocking = value;
+            OnPropertyChanged();
+            CreateScenario();
+        }
+    }
+
+    private bool _shouldCheckBlockstunEnding;
+    public bool ShouldCheckBlockstunEnding
+    {
+        get => _shouldCheckBlockstunEnding;
+        set
+        {
+            if (value == _shouldCheckBlockstunEnding) return;
+            _shouldCheckBlockstunEnding = value;
             OnPropertyChanged();
             CreateScenario();
         }
@@ -135,7 +150,8 @@ public sealed partial class EventControl
                 ShouldCheckAirTech = ShouldCheckAirTech,
                 ShouldCheckStartBlocking = ShouldCheckStartBlocking,
                 ShouldCheckWakingUp = ShouldCheckWakingUp,
-                ShouldCheckWallSplat = ShouldCheckWallSplat
+                ShouldCheckWallSplat = ShouldCheckWallSplat,
+                ShouldCheckBlockstunEnding = ShouldCheckBlockstunEnding
             },
             ScenarioEventTypes.Combo => new ComboEvent
             {
