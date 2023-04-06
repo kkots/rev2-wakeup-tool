@@ -18,25 +18,33 @@ public class AnimationEvent : IScenarioEvent
     public bool ShouldCheckWallSplat { get; set; } = true;
     public bool ShouldCheckAirTech { get; set; } = false;
     public bool ShouldCheckStartBlocking { get; set; } = false;
-
     public bool ShouldCheckBlockstunEnding { get; set; } = false;
 
     public bool IsValid =>
         ShouldCheckWakingUp || ShouldCheckWallSplat || ShouldCheckAirTech || ShouldCheckStartBlocking || ShouldCheckBlockstunEnding;
 
+    private string _lastAnimationString = ""; 
+
     public EventAnimationInfo CheckEvent()
     {
         var animationString = MemoryReader.ReadAnimationString(2);
 
-        return animationString switch
+        var result = animationString switch
         {
-            FaceDownAnimation when ShouldCheckWakingUp => new EventAnimationInfo( AnimationEventTypes.KDFaceDown),
+            FaceDownAnimation when ShouldCheckWakingUp => new EventAnimationInfo(AnimationEventTypes.KDFaceDown),
             FaceUpAnimation when ShouldCheckWakingUp => new EventAnimationInfo(AnimationEventTypes.KDFaceUp),
             WallSplatAnimation when ShouldCheckWallSplat => new EventAnimationInfo(AnimationEventTypes.WallSplat),
             TechAnimation when ShouldCheckAirTech => new EventAnimationInfo(AnimationEventTypes.Tech),
-            CrouchBlockingAnimation or StandBlockingAnimation or HighBlockingAnimation when ShouldCheckStartBlocking => new EventAnimationInfo(AnimationEventTypes.Blocking, MemoryReader.GetBlockstun(2)),
+            CrouchBlockingAnimation or StandBlockingAnimation or HighBlockingAnimation when ShouldCheckStartBlocking && _lastAnimationString is not (CrouchBlockingAnimation or StandBlockingAnimation or HighBlockingAnimation) => new EventAnimationInfo(AnimationEventTypes.StartBlocking, 0),
+            CrouchBlockingAnimation or StandBlockingAnimation or HighBlockingAnimation when ShouldCheckBlockstunEnding => new EventAnimationInfo(AnimationEventTypes.EndBlocking, MemoryReader.GetBlockstun(2)),
             _ => new EventAnimationInfo()
         };
+
+        //TODO Refactor pour envoyer l'event uniquement quand changement
+
+        _lastAnimationString = animationString ;
+
+        return result;
     }
     
 }

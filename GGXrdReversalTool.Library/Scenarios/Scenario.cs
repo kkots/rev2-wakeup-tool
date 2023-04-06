@@ -135,7 +135,9 @@ public class Scenario : IDisposable
                 return currentDummy.FaceDownFrames - scenarioActionInput.ReversalFrameIndex - 2;
             case AnimationEventTypes.WallSplat:
                 return currentDummy.WallSplatWakeupTiming - scenarioActionInput.ReversalFrameIndex - 2;
-            case AnimationEventTypes.Blocking:
+            case AnimationEventTypes.StartBlocking:
+                return 0;
+            case AnimationEventTypes.EndBlocking:
                 return eventAnimationInfo.Delay - scenarioActionInput.ReversalFrameIndex + 8;
             case AnimationEventTypes.Combo:
                 return 0;

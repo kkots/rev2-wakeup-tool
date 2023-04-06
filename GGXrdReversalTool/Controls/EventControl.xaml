@@ -43,6 +43,7 @@
                             <Binding Path="ShouldCheckWallSplat" ElementName="Control"/>
                             <Binding Path="ShouldCheckAirTech" ElementName="Control"/>
                             <Binding Path="ShouldCheckStartBlocking" ElementName="Control"/>
+                            <Binding Path="ShouldCheckBlockstunEnding" ElementName="Control"/>
                         </MultiBinding>
                     </TextBlock.Text>
                 </TextBlock>
@@ -56,6 +57,7 @@
                     <CheckBox Content="Wallsplat recovering" IsChecked="{Binding ElementName=Control, Path=ShouldCheckWallSplat}"/>
                     <CheckBox Content="Air Teching" IsChecked="{Binding ElementName=Control, Path=ShouldCheckAirTech}"/>
                     <CheckBox Content="Start Blocking" IsChecked="{Binding ElementName=Control, Path=ShouldCheckStartBlocking}"/>
+                    <CheckBox Content="Blockstun Ends" IsChecked="{Binding ElementName=Control, Path=ShouldCheckBlockstunEnding}"/>
                 </WrapPanel>
             </Grid>
         </DataTemplate>
