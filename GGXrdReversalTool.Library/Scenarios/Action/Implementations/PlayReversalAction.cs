@@ -38,6 +38,8 @@ public class PlayReversalAction : IScenarioAction
         _replayTrigger?.Trigger();
     }
 
+    [DllImport("user32.dll")]
+    private static extern uint MapVirtualKeyEx(uint uCode, uint uMapType, IntPtr dwhkl);
 
     private void InitReplayTrigger()
     {
@@ -71,16 +73,9 @@ public class PlayReversalAction : IScenarioAction
     
     private DirectXKeyStrokes GetReplayKeyStroke()
     {
-        //TODO handle when replayCode is not a letter
         int replayKeyCode = MemoryReader.GetReplayKeyCode(1);
-        char replayKey = (char)replayKeyCode;
 
-        if (!Enum.TryParse($"DIK_{replayKey}", out DirectXKeyStrokes stroke))
-        {
-            stroke = DirectXKeyStrokes.DIK_P;
-        }
-
-        return stroke;
+        return (DirectXKeyStrokes)MapVirtualKeyEx((uint)replayKeyCode, 0, IntPtr.Zero);
     }
 
     
