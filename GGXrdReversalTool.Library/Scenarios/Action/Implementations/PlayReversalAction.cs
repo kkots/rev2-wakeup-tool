@@ -1,4 +1,5 @@
-﻿using GGXrdReversalTool.Library.Configuration;
+﻿using System.Runtime.InteropServices;
+using GGXrdReversalTool.Library.Configuration;
 using GGXrdReversalTool.Library.Input;
 using GGXrdReversalTool.Library.Logging;
 using GGXrdReversalTool.Library.Memory;
@@ -16,7 +17,6 @@ public class PlayReversalAction : IScenarioAction
 
     private IReplayTrigger? _replayTrigger;
 
-
     public void Init()
     {
         if (MemoryReader == null)
@@ -29,7 +29,6 @@ public class PlayReversalAction : IScenarioAction
 
         MemoryReader.WriteInputInSlot(SlotNumber, Input);
     }
-
     public int SlotNumber { get; set; } = 1;
 
     public void Execute()
@@ -39,7 +38,7 @@ public class PlayReversalAction : IScenarioAction
     }
 
     [DllImport("user32.dll")]
-    private static extern uint MapVirtualKeyEx(uint uCode, uint uMapType, IntPtr dwhkl);
+    private static extern uint MapVirtualKeyEx(uint uCode, MapVirtualKeyMapTypes uMapType, IntPtr dwhkl);
 
     private void InitReplayTrigger()
     {
@@ -75,7 +74,7 @@ public class PlayReversalAction : IScenarioAction
     {
         int replayKeyCode = MemoryReader.GetReplayKeyCode(1);
 
-        return (DirectXKeyStrokes)MapVirtualKeyEx((uint)replayKeyCode, 0, IntPtr.Zero);
+        return (DirectXKeyStrokes)MapVirtualKeyEx((uint)replayKeyCode, MapVirtualKeyMapTypes.MAPVK_VK_TO_VSC, IntPtr.Zero);
     }
 
     
