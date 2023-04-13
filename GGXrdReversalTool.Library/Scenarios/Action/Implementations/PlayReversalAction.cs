@@ -39,6 +39,8 @@ public class PlayReversalAction : IScenarioAction
 
     [DllImport("user32.dll")]
     private static extern uint MapVirtualKeyEx(uint uCode, MapVirtualKeyMapTypes uMapType, IntPtr dwhkl);
+    [DllImport("user32.dll")]
+    private static extern IntPtr GetKeyboardLayout(uint idThread);
 
     private void InitReplayTrigger()
     {
@@ -74,7 +76,7 @@ public class PlayReversalAction : IScenarioAction
     {
         int replayKeyCode = MemoryReader.GetReplayKeyCode(1);
 
-        return (DirectXKeyStrokes)MapVirtualKeyEx((uint)replayKeyCode, MapVirtualKeyMapTypes.MAPVK_VK_TO_VSC, IntPtr.Zero);
+        return (DirectXKeyStrokes)MapVirtualKeyEx((uint)replayKeyCode, MapVirtualKeyMapTypes.MAPVK_VK_TO_VSC, GetKeyboardLayout(0));
     }
 
     
