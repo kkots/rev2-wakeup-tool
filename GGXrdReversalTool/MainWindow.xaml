@@ -10,6 +10,7 @@
         x:Name="Window"
         Title="{Binding Title}"
         Height="450" Width="800"
+        Closed="MainWindow_OnClosed"
         >
     <Window.DataContext>
         <viewModels:ScenarioWindowViewModel x:Name="ViewModel"/>
