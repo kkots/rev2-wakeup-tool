@@ -9,6 +9,9 @@ public class MemoryPointer
     public IntPtr Pointer { get; }
 
     public IEnumerable<int> Offsets { get; }
+    
+    
+    //TODO Remove?
     public string Name { get; }
 
 
@@ -24,6 +27,7 @@ public class MemoryPointer
         Offsets = new List<int>(offsets.Skip(1));
     }
 
+    //TODO Remove?
     public MemoryPointer(string name, string value, IntPtr baseAddress)
     {
         if (string.IsNullOrWhiteSpace(name))
@@ -75,6 +79,7 @@ public class MemoryPointer
 
     }
 
+    //TODO Remove?
     public MemoryPointer(string name, IntPtr baseAddress)
         : this(name, ReversalToolConfiguration.Get(name), baseAddress)
     {

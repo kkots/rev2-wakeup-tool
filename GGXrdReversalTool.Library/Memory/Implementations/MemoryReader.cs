@@ -17,26 +17,29 @@ public class MemoryReader : IMemoryReader
         _process = process;
 
         _MEMORY_BASIC_INFORMATION64 mbi;
-        IntPtr textAddr = _process.MainModule.BaseAddress + 0x1000;
+        var textAddr = _process.MainModule.BaseAddress + 0x1000;
         if (0 == VirtualQueryEx(_process.Handle, textAddr, out mbi, (uint)Marshal.SizeOf(typeof(_MEMORY_BASIC_INFORMATION64))))
+        {
             throw new Exception($"Failed to retrieve information about .text allocation");
-        byte[] text = ReadBytes(textAddr, (int)mbi.RegionSize);
+        }
 
-        int matchPtrAddr = Read<int>(textAddr - 4 + FindPatternOffset(text, "i4Ew5iIAi4B8AwAAM9s7w3QPi4DIAQAAg+ABiUQkKOs="));
-        int playerOffset = 0x169814;
-        int playerSize = 0x2d198;
-        _p1AnimStringPtr = new MemoryPointer("P1AnimStringPtr", new int[] { matchPtrAddr, playerOffset + 0x2444 });
-        _p2AnimStringPtr = new MemoryPointer("P2AnimStringPtr", new int[] { matchPtrAddr, playerOffset + playerSize + 0x2444 });
-        _p2ComboCountPtr = new MemoryPointer("P2ComboCountPtr", new int[] { matchPtrAddr, playerOffset + 0x9f28 });
-        _p1ComboCountPtr = new MemoryPointer("P1ComboCountPtr", new int[] { matchPtrAddr, playerOffset + playerSize + 0x9f28 });
-        _p1BlockStunPtr = new MemoryPointer("P1BlockStunPtr", new int[] { matchPtrAddr, playerOffset + 0x4d54 });
-        _p2BlockStunPtr = new MemoryPointer("P2BlockStunPtr", new int[] { matchPtrAddr, playerOffset + playerSize + 0x4d54 });
-        _recordingSlotPtr = new MemoryPointer("RecordingSlotPtr",  new int[] { Read<int>(textAddr + 12 + FindPatternOffset(text, "i1QkBGnSyBIAAIHC")) });
-        _frameCountPtr = new MemoryPointer("FrameCountPtr", new int[] { Read<int>(textAddr + 32 + FindPatternOffset(text, "0o1U0AhBiYioAAAAxwIEAAAAiV8Mx0cUAwAAAF9eiR0=")) });
-        _dummyIdPtr = new MemoryPointer("DummyIdPtr", new int[] { Read<int>(textAddr - 0x70 + FindPatternOffset(text, "VmYP1kZoajjHRgQ4AAAA6A==")) + 0x200 });
-        int keyBindingRelAddr = Read<int>(textAddr + 16 + FindPatternOffset(text, "h0EBAACLRgiNPIDB5wSBxw=="));
-        _p1ReplayKeyPtr = new MemoryPointer("P1ReplaykeyPtr", new int[] { keyBindingRelAddr + 0x40 });
-        _p2ReplayKeyPtr = new MemoryPointer("P2ReplaykeyPtr", new int[] { keyBindingRelAddr + 0x90 });
+        var text = ReadBytes(textAddr, (int)mbi.RegionSize);
+
+        var matchPtrAddr = Read<int>(textAddr - 4 + FindPatternOffset(text, "i4Ew5iIAi4B8AwAAM9s7w3QPi4DIAQAAg+ABiUQkKOs="));
+        const int playerOffset = 0x169814;
+        const int playerSize = 0x2d198;
+        _p1AnimStringPtr = new MemoryPointer("P1AnimStringPtr", new[] { matchPtrAddr, playerOffset + 0x2444 });
+        _p2AnimStringPtr = new MemoryPointer("P2AnimStringPtr", new[] { matchPtrAddr, playerOffset + playerSize + 0x2444 });
+        _p2ComboCountPtr = new MemoryPointer("P2ComboCountPtr", new[] { matchPtrAddr, playerOffset + 0x9f28 });
+        _p1ComboCountPtr = new MemoryPointer("P1ComboCountPtr", new[] { matchPtrAddr, playerOffset + playerSize + 0x9f28 });
+        _p1BlockStunPtr = new MemoryPointer("P1BlockStunPtr", new[] { matchPtrAddr, playerOffset + 0x4d54 });
+        _p2BlockStunPtr = new MemoryPointer("P2BlockStunPtr", new[] { matchPtrAddr, playerOffset + playerSize + 0x4d54 });
+        _recordingSlotPtr = new MemoryPointer("RecordingSlotPtr",  new[] { Read<int>(textAddr + 12 + FindPatternOffset(text, "i1QkBGnSyBIAAIHC")) });
+        _frameCountPtr = new MemoryPointer("FrameCountPtr", new[] { Read<int>(textAddr + 32 + FindPatternOffset(text, "0o1U0AhBiYioAAAAxwIEAAAAiV8Mx0cUAwAAAF9eiR0=")) });
+        _dummyIdPtr = new MemoryPointer("DummyIdPtr", new[] { Read<int>(textAddr - 0x70 + FindPatternOffset(text, "VmYP1kZoajjHRgQ4AAAA6A==")) + 0x200 });
+        var keyBindingRelAddr = Read<int>(textAddr + 16 + FindPatternOffset(text, "h0EBAACLRgiNPIDB5wSBxw=="));
+        _p1ReplayKeyPtr = new MemoryPointer("P1ReplaykeyPtr", new[] { keyBindingRelAddr + 0x40 });
+        _p2ReplayKeyPtr = new MemoryPointer("P2ReplaykeyPtr", new[] { keyBindingRelAddr + 0x90 });
     }
 
     private readonly MemoryPointer _p1AnimStringPtr;
@@ -170,32 +173,43 @@ public class MemoryReader : IMemoryReader
     private int FindPatternOffset(in byte[] haystack, in byte[] needle)
     {
         // Boyer-Moore-Horspool substring search
-        int needleLen = needle.Length;
-        int[] step = Enumerable.Repeat(needleLen, 256).ToArray();
-        for (int i = 0; i < needleLen - 1; i++)
+        var needleLen = needle.Length;
+        var step = Enumerable.Repeat(needleLen, 256).ToArray();
+        for (var i = 0; i < needleLen - 1; i++)
+        {
             step[needle[i]] = needleLen - 1 - i;
-        int end = haystack.Length - needleLen;
-        for (int p = 0; p <= end; p += step[haystack[p + needleLen - 1]])
+        }
+
+        var end = haystack.Length - needleLen;
+        for (var p = 0; p <= end; p += step[haystack[p + needleLen - 1]])
         {
             int j;
             for (j = needleLen; --j >= 0;)
+            {
                 if (needle[j] != haystack[p + j])
+                {
                     break;
+                }
+            }
+
             if (j < 0)
+            {
                 return p;
+            }
         }
         throw new Exception("Could not find offset in process");
     }
 
     private int FindPatternOffset(in byte[] haystack, in string needle) => FindPatternOffset(haystack, Convert.FromBase64String(needle));
 
+    //TODO Remove?
     private T UnmanagedConvert<T>(object value)
     {
-        Type outputType = typeof(T).IsEnum ? Enum.GetUnderlyingType(typeof(T)) : typeof(T);
+        var outputType = typeof(T).IsEnum ? Enum.GetUnderlyingType(typeof(T)) : typeof(T);
 
         T result;
 
-        GCHandle handle = GCHandle.Alloc(value, GCHandleType.Pinned);
+        var handle = GCHandle.Alloc(value, GCHandleType.Pinned);
 
         try
         {
@@ -229,16 +243,16 @@ public class MemoryReader : IMemoryReader
 
     private T Read<T>(IntPtr address)
     {
-        Type outputType = typeof(T).IsEnum ? Enum.GetUnderlyingType(typeof(T)) : typeof(T);
+        var outputType = typeof(T).IsEnum ? Enum.GetUnderlyingType(typeof(T)) : typeof(T);
 
-        int length = Marshal.SizeOf(outputType);
+        var length = Marshal.SizeOf(outputType);
 
         var value = this.ReadBytes(address, length);
 
 
         T result;
 
-        GCHandle handle = GCHandle.Alloc(value, GCHandleType.Pinned);
+        var handle = GCHandle.Alloc(value, GCHandleType.Pinned);
 
         try
         {
@@ -252,16 +266,16 @@ public class MemoryReader : IMemoryReader
         return result;
     }
 
-    private IntPtr ReadPtr(System.IntPtr address)
+    private IntPtr ReadPtr(IntPtr address)
     {
-        return new IntPtr(this.Read<int>(address));
+        return new IntPtr(Read<int>(address));
     }
 
     private byte[] ReadBytes(IntPtr address, int length)
     {
-        IntPtr handle = this._process.Handle;
-        byte[] bytes = new byte[length];
-        int lpNumberOfBytesRead = 0;
+        var handle = _process.Handle;
+        var bytes = new byte[length];
+        var lpNumberOfBytesRead = 0;
         ReadProcessMemory(handle, address, bytes, bytes.Length, ref lpNumberOfBytesRead);
 
         return bytes;
@@ -274,9 +288,9 @@ public class MemoryReader : IMemoryReader
 
     private bool Write(IntPtr address, IEnumerable<ushort> shorts)
     {
-        List<byte> bytes = new List<byte>();
+        var bytes = new List<byte>();
 
-        foreach (ushort @ushort in shorts)
+        foreach (var @ushort in shorts)
         {
             bytes.Add((byte)(@ushort & 0xFF));
             bytes.Add((byte)((@ushort >> 8) & 0xFF));
@@ -287,8 +301,8 @@ public class MemoryReader : IMemoryReader
     }
     private bool Write(IntPtr address, IEnumerable<byte> bytes)
     {
-        IntPtr handle = this._process.Handle;
-        int lpNumberOfBytesRead = 0;
+        var handle = _process.Handle;
+        var lpNumberOfBytesRead = 0;
         return WriteProcessMemory(handle, address, bytes.ToArray(), bytes.Count(), ref lpNumberOfBytesRead);
     }
 }
