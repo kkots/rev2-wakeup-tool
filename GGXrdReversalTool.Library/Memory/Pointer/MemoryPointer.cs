@@ -12,7 +12,19 @@ public class MemoryPointer
     public string Name { get; }
 
 
-    public MemoryPointer(string name, string value)
+    public MemoryPointer(string name, IEnumerable<int> offsets)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            throw new ArgumentException("Memory pointer should have a name", nameof(name));
+        }
+
+        Name = name;
+        Pointer = new IntPtr(offsets.First());
+        Offsets = new List<int>(offsets.Skip(1));
+    }
+
+    public MemoryPointer(string name, string value, IntPtr baseAddress)
     {
         if (string.IsNullOrWhiteSpace(name))
         {
@@ -44,7 +56,7 @@ public class MemoryPointer
             throw new ArgumentException($"Pointer {name} value is invalid", nameof(value));
         }
 
-        Pointer = new IntPtr(pointerValue);
+        Pointer = baseAddress + pointerValue;
 
         Offsets = values.Skip(1).Select(offset =>
         {
@@ -63,8 +75,8 @@ public class MemoryPointer
 
     }
 
-    public MemoryPointer(string name)
-        : this(name, ReversalToolConfiguration.Get(name))
+    public MemoryPointer(string name, IntPtr baseAddress)
+        : this(name, ReversalToolConfiguration.Get(name), baseAddress)
     {
     }
 }
