@@ -15,18 +15,41 @@ public class MemoryReader : IMemoryReader
     public MemoryReader(Process process)
     {
         _process = process;
+
+        _MEMORY_BASIC_INFORMATION64 mbi;
+        IntPtr textAddr = _process.MainModule.BaseAddress + 0x1000;
+        if (0 == VirtualQueryEx(_process.Handle, textAddr, out mbi, (uint)Marshal.SizeOf(typeof(_MEMORY_BASIC_INFORMATION64))))
+            throw new Exception($"Failed to retrieve information about .text allocation");
+        byte[] text = ReadBytes(textAddr, (int)mbi.RegionSize);
+
+        int matchPtrAddr = Read<int>(textAddr - 4 + FindPatternOffset(text, "i4Ew5iIAi4B8AwAAM9s7w3QPi4DIAQAAg+ABiUQkKOs="));
+        int playerOffset = 0x169814;
+        int playerSize = 0x2d198;
+        _p1AnimStringPtr = new MemoryPointer("P1AnimStringPtr", new int[] { matchPtrAddr, playerOffset + 0x2444 });
+        _p2AnimStringPtr = new MemoryPointer("P2AnimStringPtr", new int[] { matchPtrAddr, playerOffset + playerSize + 0x2444 });
+        _p2ComboCountPtr = new MemoryPointer("P2ComboCountPtr", new int[] { matchPtrAddr, playerOffset + 0x9f28 });
+        _p1ComboCountPtr = new MemoryPointer("P1ComboCountPtr", new int[] { matchPtrAddr, playerOffset + playerSize + 0x9f28 });
+        _p1BlockStunPtr = new MemoryPointer("P1BlockStunPtr", new int[] { matchPtrAddr, playerOffset + 0x4d54 });
+        _p2BlockStunPtr = new MemoryPointer("P2BlockStunPtr", new int[] { matchPtrAddr, playerOffset + playerSize + 0x4d54 });
+        _recordingSlotPtr = new MemoryPointer("RecordingSlotPtr",  new int[] { Read<int>(textAddr + 12 + FindPatternOffset(text, "i1QkBGnSyBIAAIHC")) });
+        _frameCountPtr = new MemoryPointer("FrameCountPtr", new int[] { Read<int>(textAddr + 32 + FindPatternOffset(text, "0o1U0AhBiYioAAAAxwIEAAAAiV8Mx0cUAwAAAF9eiR0=")) });
+        _dummyIdPtr = new MemoryPointer("DummyIdPtr", new int[] { Read<int>(textAddr - 0x70 + FindPatternOffset(text, "VmYP1kZoajjHRgQ4AAAA6A==")) + 0x200 });
+        int keyBindingRelAddr = Read<int>(textAddr + 16 + FindPatternOffset(text, "h0EBAACLRgiNPIDB5wSBxw=="));
+        _p1ReplayKeyPtr = new MemoryPointer("P1ReplaykeyPtr", new int[] { keyBindingRelAddr + 0x40 });
+        _p2ReplayKeyPtr = new MemoryPointer("P2ReplaykeyPtr", new int[] { keyBindingRelAddr + 0x90 });
     }
 
-    private readonly MemoryPointer _p1AnimStringPtr = new("P1AnimStringPtr");
-    private readonly MemoryPointer _p2AnimStringPtr = new("P2AnimStringPtr");
-    private readonly MemoryPointer _frameCountPtr = new("FrameCountPtr");
-    private readonly MemoryPointer _dummyIdPtr = new("DummyIdPtr");
-    private readonly MemoryPointer _recordingSlotPtr = new("RecordingSlotPtr");
-    private readonly MemoryPointer _p1ComboCountPtr = new("P1ComboCountPtr");
-    private readonly MemoryPointer _p2ComboCountPtr = new("P2ComboCountPtr");
-    private readonly MemoryPointer _p1ReplayKeyPtr = new("P1ReplayKeyPtr");
-    private readonly MemoryPointer _p2ReplayKeyPtr = new("P2ReplayKeyPtr");
-    private readonly MemoryPointer _p2BlockStunPtr = new("P2BlockStunPtr");
+    private readonly MemoryPointer _p1AnimStringPtr;
+    private readonly MemoryPointer _p2AnimStringPtr;
+    private readonly MemoryPointer _frameCountPtr;
+    private readonly MemoryPointer _dummyIdPtr;
+    private readonly MemoryPointer _recordingSlotPtr;
+    private readonly MemoryPointer _p1ComboCountPtr;
+    private readonly MemoryPointer _p2ComboCountPtr;
+    private readonly MemoryPointer _p1ReplayKeyPtr;
+    private readonly MemoryPointer _p2ReplayKeyPtr;
+    private readonly MemoryPointer _p1BlockStunPtr;
+    private readonly MemoryPointer _p2BlockStunPtr;
     private const int RecordingSlotSize = 4808;
 
 
@@ -67,7 +90,7 @@ public class MemoryReader : IMemoryReader
         {
             throw new ArgumentException("Invalid Slot number", nameof(slotNumber));
         }
-        var baseAddress = GetAddressWithOffsets(_recordingSlotPtr.Pointer, _recordingSlotPtr.Offsets.ToArray());
+        var baseAddress = GetAddressWithOffsets(_recordingSlotPtr);
         var slotAddress = IntPtr.Add(baseAddress, RecordingSlotSize * (slotNumber - 1));
 
         return Write(slotAddress, slotInput.Header.Concat(slotInput.Content));
@@ -92,7 +115,7 @@ public class MemoryReader : IMemoryReader
             _ => throw new ArgumentException($"Player index is invalid : {player}")
         };
     }
-    
+
     public int GetBlockstun(int player)
     {
         return player switch
@@ -115,15 +138,57 @@ public class MemoryReader : IMemoryReader
         ref int lpNumberOfBytesRead);
 
     [DllImport("kernel32.dll", SetLastError = true)]
-    private static extern bool WriteProcessMemory
-    (IntPtr hProcess,
+    private static extern bool WriteProcessMemory(
+        IntPtr hProcess,
         IntPtr lpBaseAddress,
         byte[] lpBuffer,
         int dwSize,
         ref int lpNumberOfBytesRead);
 
+    [DllImport("kernel32.dll", SetLastError = true)]
+    private static extern int VirtualQueryEx(
+        IntPtr hProcess,
+        IntPtr lpBaseAddress,
+        out _MEMORY_BASIC_INFORMATION64 lpBuffer,
+        uint dwSize);
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct _MEMORY_BASIC_INFORMATION64 {
+        public ulong BaseAddress;
+        public ulong AllocationBase;
+        public uint AllocationProtect;
+        uint _alignment1;
+        public ulong RegionSize;
+        public uint State;
+        public uint Protect;
+        public uint Type;
+        uint _alignment2;
+    }
+
     #endregion
-    
+
+    private int FindPatternOffset(in byte[] haystack, in byte[] needle)
+    {
+        // Boyer-Moore-Horspool substring search
+        int needleLen = needle.Length;
+        int[] step = Enumerable.Repeat(needleLen, 256).ToArray();
+        for (int i = 0; i < needleLen - 1; i++)
+            step[needle[i]] = needleLen - 1 - i;
+        int end = haystack.Length - needleLen;
+        for (int p = 0; p <= end; p += step[haystack[p + needleLen - 1]])
+        {
+            int j;
+            for (j = needleLen; --j >= 0;)
+                if (needle[j] != haystack[p + j])
+                    break;
+            if (j < 0)
+                return p;
+        }
+        throw new Exception("Could not find offset in process");
+    }
+
+    private int FindPatternOffset(in byte[] haystack, in string needle) => FindPatternOffset(haystack, Convert.FromBase64String(needle));
+
     private T UnmanagedConvert<T>(object value)
     {
         Type outputType = typeof(T).IsEnum ? Enum.GetUnderlyingType(typeof(T)) : typeof(T);
@@ -144,49 +209,22 @@ public class MemoryReader : IMemoryReader
         return result;
     }
 
-    private IntPtr GetAddressWithOffsets(IntPtr address, params int[] offsets)
+    private IntPtr GetAddressWithOffsets(MemoryPointer memoryPointer)
     {
-            
-        IntPtr newAddress = IntPtr.Add(this._process.MainModule.BaseAddress, (int)address);
-
-        foreach (var offset in offsets)
+        var address = memoryPointer.Pointer;
+        foreach (var offset in memoryPointer.Offsets)
         {
-            IntPtr value = new IntPtr(this.Read<int>(newAddress));
-                
-            newAddress = IntPtr.Add(value, offset);
+            address = ReadPtr(address) + offset;
         }
 
-        return newAddress;
-            
+        return address;
     }
+
     private string ReadString(MemoryPointer memoryPointer, int length)
     {
-        return memoryPointer.Offsets.Any()
-            ? this.ReadStringWithOffsets(memoryPointer.Pointer, length, memoryPointer.Offsets.ToArray())
-            : this.ReadString(memoryPointer.Pointer, length);
-    }
-
-    private string ReadStringWithOffsets(IntPtr baseAddress, int length, params int[] offsets)
-    {
-        IntPtr newAddress = IntPtr.Add(this._process.MainModule.BaseAddress, (int)baseAddress);
-        IntPtr value = this.Read<IntPtr>(newAddress);
-        string result = string.Empty;
-
-        for (int i = 0; i < offsets.Length; i++)
-        {
-            newAddress = IntPtr.Add(value, offsets[i]);
-
-            if (i + 1 == offsets.Length)
-            {
-                result = this.ReadString(newAddress, length);
-            }
-            else
-            {
-                value = this.Read<IntPtr>(newAddress);
-            }
-        }
-
-        return result;
+        var value = ReadBytes(GetAddressWithOffsets(memoryPointer), length);
+        var result = Encoding.Default.GetString(value);
+        return result.Replace("\0", "");
     }
 
     private T Read<T>(IntPtr address)
@@ -213,25 +251,10 @@ public class MemoryReader : IMemoryReader
 
         return result;
     }
-    private T ReadWithOffsets<T>(IntPtr baseAddress, params int[] offsets)
+
+    private IntPtr ReadPtr(System.IntPtr address)
     {
-        IntPtr newAddress = IntPtr.Add(this._process.MainModule.BaseAddress, (int)baseAddress);
-
-        foreach (var offset in offsets)
-        {
-            IntPtr value = new IntPtr(Read<int>(newAddress));
-                
-            newAddress = IntPtr.Add(value, offset);
-        }
-
-        return Read<T>(newAddress);
-    }
-
-    private string ReadString(IntPtr address, int length)
-    {
-        var value = ReadBytes(address, length);
-        var result = Encoding.Default.GetString(value);
-        return result.Replace("\0", "");
+        return new IntPtr(this.Read<int>(address));
     }
 
     private byte[] ReadBytes(IntPtr address, int length)
@@ -246,10 +269,9 @@ public class MemoryReader : IMemoryReader
     
     private T Read<T>(MemoryPointer memoryPointer)
     {
-        return memoryPointer.Offsets.Any() ? 
-            ReadWithOffsets<T>(memoryPointer.Pointer, memoryPointer.Offsets.ToArray()) :
-            Read<T>(memoryPointer.Pointer);
+        return Read<T>(GetAddressWithOffsets(memoryPointer));
     }
+
     private bool Write(IntPtr address, IEnumerable<ushort> shorts)
     {
         List<byte> bytes = new List<byte>();
