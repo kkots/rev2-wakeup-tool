@@ -63,7 +63,7 @@ public class SlotInput
                 
                 return new
                 {
-                    FrameInputWithoutMultiplicator = frameInputWithoutMultiplicator,
+                    FrameInputWithoutMultiplicator = frameInputWithoutMultiplicator.ToUpper(),
                     Multiplicator = multiplicator
                 };
             })
