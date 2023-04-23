@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics;
 using GGXrdReversalTool.Library.Characters;
+using GGXrdReversalTool.Library.Memory.Pointer;
 using GGXrdReversalTool.Library.Models;
 using GGXrdReversalTool.Library.Models.Inputs;
 

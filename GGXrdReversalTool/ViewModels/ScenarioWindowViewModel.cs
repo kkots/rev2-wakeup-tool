@@ -44,6 +44,7 @@ public class ScenarioWindowViewModel : ViewModelBase
 #endif
         LogManager.Instance.MessageDequeued += InstanceOnMessageDequeued;
         
+        //TODO injection
         _memoryReader = new MemoryReader(process!);
         
         
