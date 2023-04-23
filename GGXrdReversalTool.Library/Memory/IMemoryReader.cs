@@ -16,6 +16,4 @@ public interface IMemoryReader
     int GetReplayKeyCode(int player);
     int GetBlockstun(int player);
     Process Process { get; }
-    byte[] ReadBytes(IntPtr address, int length);
-    T Read<T>(IntPtr address);
 }
