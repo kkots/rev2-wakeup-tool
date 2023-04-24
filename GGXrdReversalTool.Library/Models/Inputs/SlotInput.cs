@@ -1,4 +1,5 @@
-﻿using System.Text.RegularExpressions;
+﻿using System.Globalization;
+using System.Text.RegularExpressions;
 using GGXrdReversalTool.Library.Extensions;
 
 namespace GGXrdReversalTool.Library.Models.Inputs;
@@ -12,28 +13,51 @@ public class SlotInput
     //TODO Replace by Enum Directions?
     private readonly int[] _directions = { 0b0110, 0b0010, 0b1010, 0b0100, 0b0000, 0b1000, 0b0101, 0b0001, 0b1001 };
 
+    private readonly string _rawInputText;
+    
     #region Constructors
-    public SlotInput(string rawInputText)
+    public SlotInput(string content)
     {
-        RawInputText = rawInputText;
+        if (IsBytesInput(content))
+        {
+            var bytes = content.Split(",").Select(x => byte.Parse(x, NumberStyles.HexNumber)).ToList();
+            _rawInputText = new SlotInput(bytes).CondensedInputListText.Aggregate((a, b) => $"{a},{b}");
+        }
+        else
+        {
+            _rawInputText = content;            
+        }
+        
     }
 
-    public SlotInput()
-        :this(string.Empty)
+    public SlotInput(IList<byte> result)
     {
+        var header = result.Take(8).ToArray();
+        bool isP2 = header[0] == 1;
+        
+        var inputShorts = new List<ushort>();
+
+        //TODO Refactor linq
+        for (int i = 8; i < result.Count; i += 2)
+        {
+            var value = (ushort)(result[i] + (byte.MaxValue + 1) * result[i + 1]);
+            inputShorts.Add(value);
+        }
+
+        var input = inputShorts
+            .Select(x => SingleInputParse(x, isP2))
+            .Aggregate((a, b) => $"{a},{b}");
+        _rawInputText = input;
     }
 
     #endregion
-    
-    public string RawInputText { get; set; }
-
-    public IEnumerable<string> ExpandedInputList => GetExpandedFrameInputList(RawInputText);
-    public IEnumerable<string> CondensedInputListText => GetCondensedFrameInputListText(RawInputText);
-    public IEnumerable<CondensedInput> CondensedInputList => GetCondensedFrameInputList(RawInputText);
-    public IEnumerable<ushort> Content => GetContent(RawInputText);
-
 
     
+
+    public IEnumerable<string> ExpandedInputList => GetExpandedFrameInputList(_rawInputText);
+    public IEnumerable<string> CondensedInputListText => GetCondensedFrameInputListText(_rawInputText);
+    public IEnumerable<CondensedInput> CondensedInputList => GetCondensedFrameInputList(_rawInputText);
+    public IEnumerable<ushort> Content => GetContent(_rawInputText);
 
     public int ReversalFrameIndex
     {
@@ -42,8 +66,6 @@ public class SlotInput
             return ExpandedInputList.FirstIndexOf(input => input.Contains(WakeUpFrameDelimiter));
         }
     }
-
-    
 
     private IEnumerable<string> GetExpandedFrameInputList(string rawInputText)
     {
@@ -127,63 +149,6 @@ public class SlotInput
     }
 
 
-    [Obsolete]
-    private IEnumerable<ushort> ProcessInput(string inputText)
-    {
-        IEnumerable<string> inputList = inputText.Split(FrameDelimiter).Where(i => !string.IsNullOrEmpty(i));
-
-        var regex = new Regex(_inputPattern, RegexOptions.IgnoreCase);
-
-        var result = inputList
-                .SelectMany(rawFrameInput =>
-                {
-                    if (!regex.IsMatch(rawFrameInput))
-                    {
-                        return Enumerable.Empty<ushort>();
-                    }
-
-                    var match = regex.Match(rawFrameInput);
-                    var frameInput = match.Groups["frameInput"].Value;
-
-                    var multiplicative = int.TryParse(match.Groups["multiplicator"].Value, out var tmpMultiplicative)
-                        ? tmpMultiplicative
-                        : 1;
-
-                    var values = frameInput
-                            .Select(singleFrameInput =>
-                            {
-                                if (int.TryParse(singleFrameInput.ToString(), out var direction) &&
-                                    direction is >= 1 and <= 9)
-                                {
-                                    return _directions[direction - 1];
-                                }
-
-                                var buttonText = singleFrameInput.ToString().ToUpper();
-
-                                if (buttonText is not ("P" or "K" or "S" or "H" or "D"))
-                                {
-                                    return 0;
-                                }
-
-                                var button = Enum.Parse<Buttons>(buttonText);
-
-                                return (int)button;
-
-                            })
-                        ;
-
-                    var value = values.Aggregate((a, b) => a | b);
-
-                    return Enumerable.Range(0, multiplicative).Select(_ => (ushort)value);
-
-                })
-            ;
-    
-
-        return result;
-    }
-
-
     private IEnumerable<CondensedInput> GetCondensedFrameInputList(string rawInputText)
     {
         var expandedFrameInputList = GetExpandedFrameInputList(rawInputText).ToList();
@@ -222,16 +187,79 @@ public class SlotInput
 
     public IEnumerable<ushort> Header => new List<ushort> { 0, 0, (ushort)Content.Count(), 0 };
 
-    public IEnumerable<string> InputSplit
+    private string SingleInputParse(ushort input, bool isP2 = false)
     {
-        get
+
+        string result = string.Empty;
+
+
+        //direction
+        if (IsDirectionPressed(input, Directions.Dir2) && IsDirectionPressed(input, Directions.Dir4))
         {
-            // var pattern = @"(?<frameInput>" + WakeUpFrameDelimiter + "{0,1}[1-9]{1}[pkshd]{0,5})";
-            // var regex = new Regex(pattern, RegexOptions.IgnoreCase);
-            // return _inputText.Split(FrameDelimiter).Where(i => regex.IsMatch(i));
-            
-            return Enumerable.Empty<string>(); //TODO Implement
+            result += !isP2 ? "1" : "3";
         }
+        else if (IsDirectionPressed(input, Directions.Dir2) && IsDirectionPressed(input, Directions.Dir6))
+        {
+            result += !isP2 ? "3" : "1";
+        }
+        else if (IsDirectionPressed(input, Directions.Dir4) && IsDirectionPressed(input, Directions.Dir8))
+        {
+            result += !isP2 ? "7" : "9";
+        }
+        else if (IsDirectionPressed(input, Directions.Dir8) && IsDirectionPressed(input, Directions.Dir6))
+        {
+            result += !isP2 ? "9" : "7";
+        }
+        else if (IsDirectionPressed(input, Directions.Dir2))
+        {
+            result += "2";
+        }
+        else if (IsDirectionPressed(input, Directions.Dir6))
+        {
+            result += !isP2 ? "6" : "4";
+        }
+        else if (IsDirectionPressed(input, Directions.Dir4))
+        {
+            result += !isP2 ? "4" : "6";
+        }
+        else if (IsDirectionPressed(input, Directions.Dir8))
+        {
+            result += "8";
+        }
+        else
+        {
+            result += "5";
+        }
+
+
+        //button
+        foreach (Buttons button in Enum.GetValues(typeof(Buttons)))
+        {
+            if (IsButtonPressed(input, button))
+            {
+                result += button.ToString();
+            }
+        }
+
+        return result;
+
+    }
+    
+    private bool IsDirectionPressed(ushort input, Directions direction)
+    {
+        return (input & (int)direction) == (int)direction;
+    }
+
+    private bool IsButtonPressed(ushort input, Buttons button)
+    {
+        return (input & (int)button) == (int)button;
+    }
+
+    private bool IsBytesInput(string content)
+    {
+        var contentSplit = content.Split(FrameDelimiter);
+
+        return contentSplit.Length >= 4 && contentSplit[0] is "0" or "1" && contentSplit[1] is "0";
     }
 }
 
