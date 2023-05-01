@@ -28,8 +28,8 @@ public class MemoryReader : IMemoryReader
 
         return player switch
         {
-            1 => ReadString(_pointerCollection.P1AnimStringPtr, length),
-            2 => ReadString(_pointerCollection.P2AnimStringPtr, length),
+            0 => ReadString(_pointerCollection.P1AnimStringPtr, length),
+            1 => ReadString(_pointerCollection.P2AnimStringPtr, length),
             _ => string.Empty
         };
     }
@@ -64,30 +64,35 @@ public class MemoryReader : IMemoryReader
     {
         return player switch
         {
-            1 => Read<int>(_pointerCollection.P1ComboCountPtr),
-            2 => Read<int>(_pointerCollection.P2ComboCountPtr),
+            0 => Read<int>(_pointerCollection.P1ComboCountPtr),
+            1 => Read<int>(_pointerCollection.P2ComboCountPtr),
             _ => throw new ArgumentException($"Player index is invalid : {player}")
         };
     }
 
-    public int GetReplayKeyCode(int player)
+    public int GetReplayKeyCode()
     {
-        return player switch
-        {
-            1 => Read<int>(_pointerCollection.P1ReplayKeyPtr),
-            2 => Read<int>(_pointerCollection.P2ReplayKeyPtr),
-            _ => throw new ArgumentException($"Player index is invalid : {player}")
-        };
+        return Read<int>(_pointerCollection.ReplayKeyPtr);
     }
 
     public int GetBlockstun(int player)
     {
         return player switch
         {
-            1 => throw new NotImplementedException("GetBlockstun not implemented for player 1"),
-            2 => Read<int>(_pointerCollection.P2BlockStunPtr),
+            0 => Read<int>(_pointerCollection.P1BlockStunPtr),
+            1 => Read<int>(_pointerCollection.P2BlockStunPtr),
             _ => throw new ArgumentException($"Player index is invalid : {player}")
         };
+    }
+
+    public int GetPlayerSide()
+    {
+        return Read<byte>(_pointerCollection.PlayerSidePtr) != 0 ? 1 : 0;
+    }
+
+    public bool IsTrainingMode()
+    {
+        return Read<byte>(_pointerCollection.GameModePtr) == 6;
     }
 
 
@@ -208,10 +213,11 @@ public class MemoryReader : IMemoryReader
         public MemoryPointer RecordingSlotPtr { get; private set; } = null!;
         public MemoryPointer P1ComboCountPtr { get; private set; } = null!;
         public MemoryPointer P2ComboCountPtr { get; private set; } = null!;
-        public MemoryPointer P1ReplayKeyPtr { get; private set; } = null!;
-        public MemoryPointer P2ReplayKeyPtr { get; private set; } = null!;
+        public MemoryPointer ReplayKeyPtr { get; private set; } = null!;
         public MemoryPointer P1BlockStunPtr { get; private set; } = null!;
         public MemoryPointer P2BlockStunPtr { get; private set; } = null!;
+        public MemoryPointer PlayerSidePtr { get; private set; } = null!;
+        public MemoryPointer GameModePtr { get; private set; } = null!;
 
         private readonly Process _process;
         private readonly MemoryReader _memoryReader;
@@ -266,8 +272,13 @@ public class MemoryReader : IMemoryReader
             const string keyBindingPattern = "h0EBAACLRgiNPIDB5wSBxw==";
             var keyBindingRelAddr = _memoryReader.Read<int>(textAddr + 16 + FindPatternOffset(text, keyBindingPattern));
 
-            P1ReplayKeyPtr = new MemoryPointer(keyBindingRelAddr + 0x40);
-            P2ReplayKeyPtr = new MemoryPointer(keyBindingRelAddr + 0x90);
+            ReplayKeyPtr = new MemoryPointer(keyBindingRelAddr + 0x40);
+
+            // Function name known because of debug printf
+            const string getHitoriyouMainSidePattern = "M8A4QUQPlcDDzA==";
+            var gameDataPtr = _memoryReader.Read<int>(textAddr - 4 + FindPatternOffset(text, getHitoriyouMainSidePattern));
+            PlayerSidePtr = new MemoryPointer(gameDataPtr, 0x44);
+            GameModePtr = new MemoryPointer(gameDataPtr, 0x45);
         }
 
         private int FindPatternOffset(in byte[] haystack, in byte[] needle)

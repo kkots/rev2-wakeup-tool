@@ -74,7 +74,7 @@ public class PlayReversalAction : IScenarioAction
     
     private DirectXKeyStrokes GetReplayKeyStroke()
     {
-        int replayKeyCode = MemoryReader.GetReplayKeyCode(1);
+        int replayKeyCode = MemoryReader.GetReplayKeyCode();
 
         return (DirectXKeyStrokes)MapVirtualKeyEx((uint)replayKeyCode, MapVirtualKeyMapTypes.MAPVK_VK_TO_VSC, GetKeyboardLayout(0));
     }
