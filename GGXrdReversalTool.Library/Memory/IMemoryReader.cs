@@ -13,7 +13,9 @@ public interface IMemoryReader
     Character GetCurrentDummy();
     bool WriteInputInSlot(int slotNumber, SlotInput slotInput);
     int GetComboCount(int player);
-    int GetReplayKeyCode(int player);
+    int GetReplayKeyCode();
     int GetBlockstun(int player);
+    int GetPlayerSide();
+    bool IsTrainingMode();
     Process Process { get; }
 }

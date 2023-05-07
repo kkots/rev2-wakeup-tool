@@ -27,7 +27,7 @@ public class AnimationEvent : IScenarioEvent
 
     public EventAnimationInfo CheckEvent()
     {
-        var animationString = MemoryReader.ReadAnimationString(2);
+        var animationString = MemoryReader.ReadAnimationString(1 - MemoryReader.GetPlayerSide());
 
         var result = animationString switch
         {
@@ -36,7 +36,7 @@ public class AnimationEvent : IScenarioEvent
             WallSplatAnimation when ShouldCheckWallSplat => new EventAnimationInfo(AnimationEventTypes.WallSplat),
             TechAnimation when ShouldCheckAirTech => new EventAnimationInfo(AnimationEventTypes.Tech),
             CrouchBlockingAnimation or StandBlockingAnimation or HighBlockingAnimation when ShouldCheckStartBlocking && _lastAnimationString is not (CrouchBlockingAnimation or StandBlockingAnimation or HighBlockingAnimation) => new EventAnimationInfo(AnimationEventTypes.StartBlocking, 0),
-            CrouchBlockingAnimation or StandBlockingAnimation or HighBlockingAnimation when ShouldCheckBlockstunEnding => new EventAnimationInfo(AnimationEventTypes.EndBlocking, MemoryReader.GetBlockstun(2)),
+            CrouchBlockingAnimation or StandBlockingAnimation or HighBlockingAnimation when ShouldCheckBlockstunEnding => new EventAnimationInfo(AnimationEventTypes.EndBlocking, MemoryReader.GetBlockstun(1 - MemoryReader.GetPlayerSide())),
             _ => new EventAnimationInfo()
         };
 
