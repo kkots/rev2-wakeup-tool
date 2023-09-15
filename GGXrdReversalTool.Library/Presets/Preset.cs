@@ -33,6 +33,8 @@ public class Preset
             Character = Character.Sol,
             CharacterMoves = new[]
             {
+                new CharacterMove { Name = "Gun Flame", Input = "2,3,!6P" },
+                new CharacterMove { Name = "Gun Flame (Feint)", Input = "2,1,!4P" },
                 new CharacterMove { Name = "Volcanic Viper H (DP)", Input = "6,2,!3H" },
                 new CharacterMove { Name = "Volcanic Viper S (DP)", Input = "6,2,!3S" },
                 new CharacterMove { Name = "Tyrant Rave", Input = "6,3,2,1,4,!6H"},
@@ -44,6 +46,8 @@ public class Preset
             Character = Character.Ky,
             CharacterMoves = new[]
             {
+                new CharacterMove { Name = "Stun Edge", Input = "2,3,!6S" },
+                new CharacterMove { Name = "Charged Stun Edge", Input = "2,3,!6H" },
                 new CharacterMove { Name = "Vapor Thrust H (DP)", Input = "6,2,!3H" },
                 new CharacterMove { Name = "Vapor Thrust S (DP)", Input = "6,2,!3S" },
                 new CharacterMove { Name = "Ride The Lightning", Input = "6,3,2,1,4,!6H"},
@@ -244,8 +248,23 @@ public class Preset
             Character = Character.Haehyun,
             CharacterMoves = new[]
             {
+                new CharacterMove { Name = "Blue Tuning Ball", Input = "2,3,6S" },
+                new CharacterMove { Name = "Red Tuning Ball", Input = "2,3,6H" },
+                new CharacterMove { Name = "Four Tigers Sword", Input = "6,2,3K" },
+                new CharacterMove { Name = "Four Tigers Sword [Max]", Input = "6,2,3K,5K*56" },
+                new CharacterMove { Name = "Four Tigers Sword (Reverse)", Input = "6,2,3K,4K*6" },
+                new CharacterMove { Name = "Four Tigers Sword (Reverse) [Max]", Input = "6,2,3K,4K*19" },
+                new CharacterMove { Name = "Blue Shi-Shiinken", Input = "6,2,3k*10,5*7,4k*12" },
+                new CharacterMove { Name = "Red Shi-Shiinken", Input = "6,2,3k*10,5*7,4k*25" },
+                new CharacterMove { Name = "Falcon Dive", Input = "2,1,4K" },
+                new CharacterMove { Name = "Falcon Dive [Max]", Input = "2,1,4K" },
+                new CharacterMove { Name = "Falcon Dive (Reverse)", Input = "2,1,4K*7" },
+                new CharacterMove { Name = "Falcon Dive (Reverse) [Max]", Input = "2,1,4K*7,5k*59" },
+                new CharacterMove { Name = "Air Falcon Dive", Input = "2,1,4,7*5,7k" },
                 new CharacterMove { Name = "Enlightened 3000 Palm Strike", Input = "2,3,6,2,3,!6H" },
-                new CharacterMove { Name = "Burst Enlightened 3000 Palm Strike", Input = "2,3,6,2,3,!6D" }
+                new CharacterMove { Name = "Burst Enlightened 3000 Palm Strike", Input = "2,3,6,2,3,!6D" },
+                new CharacterMove { Name = "Enlightened 3000 Palm Strike [Max]", Input = "2,3,6,2,3,6H,5*80,5H*195" },
+                new CharacterMove { Name = "Celestial Tuning Ball", Input = "2,3,6,2,3,6S" }
             }
         },
         new Preset
