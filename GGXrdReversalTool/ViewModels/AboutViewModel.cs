@@ -61,6 +61,18 @@ public class AboutViewModel : ViewModelBase
 
     public RelayCommand TwitterCommand => new(TwitterNavigate);
 
+    private bool _offlineMode;
+    public bool OfflineMode
+    {
+        get => _offlineMode;
+        set
+        {
+            if (value == _offlineMode) return;
+            _offlineMode = value;
+            OnPropertyChanged();
+        }
+    }
+
     private void TwitterNavigate()
     {
         string target = "https://twitter.com/iquisiquis";
