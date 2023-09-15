@@ -21,7 +21,7 @@ namespace GGXrdReversalTool.ViewModels;
 public class ScenarioWindowViewModel : ViewModelBase
 {
     private readonly UpdateManager _updateManager = new();
-    private readonly IMemoryReader _memoryReader;
+    private readonly IMemoryReader _memoryReader = null!;
     private readonly StringBuilder _logStringBuilder = new();
     private Scenario? _scenario;
     public IScenarioEvent? ScenarioEvent { get; set; }
@@ -32,22 +32,22 @@ public class ScenarioWindowViewModel : ViewModelBase
     {
         var process = Process.GetProcessesByName("GuiltyGearXrd").FirstOrDefault();
         
-#if !DEBUG
         if (process == null)
         {
-            string message =
-                "Guilty Gear not found open!  Remember, be in training mode paused when you open this program.  This program will now close.";
-            LogManager.Instance.WriteLine(message);
-            MessageBox.Show(message);
+            var aboutWindow = new AboutWindow(offlineMode: true);
+        
+            aboutWindow.ShowDialog();
+            
             Application.Current.Shutdown();
+            return;
         }
-#endif
+
         LogManager.Instance.MessageDequeued += InstanceOnMessageDequeued;
         
         //TODO injection
-        _memoryReader = new MemoryReader(process!);
-        
-        
+        _memoryReader = new MemoryReader(process);
+
+
     }
 
     public string Title => $"GGXrd Rev 2 Reversal Tool v{ReversalToolConfiguration.Get("CurrentVersion")}";
