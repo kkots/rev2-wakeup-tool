@@ -13,12 +13,8 @@ public partial class MainWindow : Window
 
     private void MainWindow_OnClosed(object? sender, EventArgs e)
     {
-        if (DataContext is ScenarioWindowViewModel scenarioWindowViewModel)
-        {
-            if (scenarioWindowViewModel.DisableCommand.CanExecute())
-            {
-                scenarioWindowViewModel.DisableCommand.Execute();
-            }
-        }
+        if (DataContext is not ScenarioWindowViewModel scenarioWindowViewModel) return;
+        if (!scenarioWindowViewModel.DisableCommand.CanExecute()) return;
+        scenarioWindowViewModel.DisableCommand.Execute();
     }
 }
