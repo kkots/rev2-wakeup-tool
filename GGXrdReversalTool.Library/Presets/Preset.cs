@@ -23,8 +23,8 @@ public class Preset
                 new CharacterMove { Name = "FD Jump", Input = "!7,1PK*200"},
                 new CharacterMove { Name = "FD Superjump", Input = "!2,7,1PK*200"},
                 new CharacterMove { Name = "Gold Burst", Input = "!5DH"},
-                new CharacterMove { Name = "Throw + 6P OS", Input = "!6PH"},
-                new CharacterMove { Name = "Throw + cS OS", Input = "!6SH"}
+                new CharacterMove { Name = "Throw + 6P OS", Input = "!6PH*3"},
+                new CharacterMove { Name = "Throw + cS OS", Input = "!6SH*3"}
 
             }
         },
