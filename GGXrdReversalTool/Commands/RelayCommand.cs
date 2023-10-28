@@ -3,31 +3,35 @@ using System.Windows.Input;
 
 namespace GGXrdReversalTool.Commands;
 
-public class RelayCommand<T> : ICommand
+public class RelayCommand<TActionParam> : ICommand
 {
-    private readonly Action<T> _execute;
-    private readonly Func<T, bool> _canExecute;
+    private readonly Action<TActionParam> _execute;
+    private readonly Func<TActionParam, bool> _canExecute;
 
-    public event EventHandler CanExecuteChanged
+    public event EventHandler? CanExecuteChanged
     {
         add => CommandManager.RequerySuggested += value;
         remove => CommandManager.RequerySuggested -= value;
     }
 
-    public RelayCommand(Action<T> execute, Func<T, bool> canExecute = null)
+    public RelayCommand(Action<TActionParam> execute, Func<TActionParam, bool>? canExecute = null)
     {
-        this._execute = execute;
-        this._canExecute = canExecute;
+        _execute = execute;
+        _canExecute = canExecute ?? (_ => true);
     }
 
-    public bool CanExecute(object parameter)
+    public bool CanExecute(object? parameter)
     {
-        return this._canExecute == null || this._canExecute((T)parameter);
+        if (parameter is not TActionParam param) throw new InvalidOperationException();
+
+        return _canExecute(param);
     }
 
-    public void Execute(object parameter)
+    public void Execute(object? parameter)
     {
-        this._execute((T)parameter);
+        if (parameter is not TActionParam param) throw new InvalidOperationException();
+        
+        _execute(param);
     }
 }
 
@@ -35,27 +39,29 @@ public class RelayCommand : ICommand
 {
     private readonly Action _execute;
     private readonly Func<bool> _canExecute;
-
-    public RelayCommand(Action execute, Func<bool> canExecute = null)
-    {
-        _execute = execute;
-        _canExecute = canExecute;
-    }
-
-    public event EventHandler CanExecuteChanged
+    
+    public event EventHandler? CanExecuteChanged
     {
         add => CommandManager.RequerySuggested += value;
         remove => CommandManager.RequerySuggested -= value;
     }
 
-    public bool CanExecute(object parameter = null)
+    public RelayCommand(Action execute, Func<bool>? canExecute = null)
     {
-        return this._canExecute == null || this._canExecute();
+        _execute = execute;
+        _canExecute = canExecute ?? (() => true);
     }
 
-    public void Execute(object parameter = null)
+    
+
+    public bool CanExecute(object? parameter = null)
     {
-        this._execute();
+        return _canExecute();
+    }
+
+    public void Execute(object? parameter = null)
+    {
+        _execute();
     }
 
 }
