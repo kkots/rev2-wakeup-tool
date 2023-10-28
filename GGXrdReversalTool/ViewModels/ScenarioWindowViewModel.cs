@@ -291,4 +291,32 @@ public class ScenarioWindowViewModel : ViewModelBase
     }
 
     #endregion
+
+    #region ImportCommand
+
+    public RelayCommand<int> ImportCommand => new(Import, CanImport);
+
+    private void Import(int slotNumber)
+    {
+        throw new NotImplementedException();
+    }
+
+    private bool CanImport(int slotNumber)
+    {
+        return !IsRunning;
+    }
+
+    #endregion
+
+    #region ExportCommand
+
+    public RelayCommand<int> ExportCommand => new(Export);
+
+    private void Export(int slotNumber)
+    {
+        throw new NotImplementedException();
+    }
+
+
+    #endregion
 }
