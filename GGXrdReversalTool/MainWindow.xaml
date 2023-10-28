@@ -53,7 +53,9 @@
                     </GroupBox>
                 </DockPanel>
             </TabItem>
-            <TabItem Header="Import/Export" IsEnabled="False"></TabItem>
+            <TabItem Header="Import/Export">
+                <controls:SlotImportExportControl ImportCommand="{Binding ImportCommand}" ExportCommand="{Binding ExportCommand}"/>
+            </TabItem>
             <TabItem Header="Log">
                 <DockPanel>
                     <TextBox Text="{Binding LogText, Mode=OneWay}" IsReadOnly="True" TextWrapping="Wrap"/>
