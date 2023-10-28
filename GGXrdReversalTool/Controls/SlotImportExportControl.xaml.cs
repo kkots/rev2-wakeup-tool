@@ -28,6 +28,6 @@ public partial class SlotImportExportControl : UserControl
     }
 
     public static readonly DependencyProperty ExportCommandProperty = DependencyProperty.Register(
-        nameof(ExportCommand), typeof(RelayCommand<int>), typeof(SlotImportExportControl), new PropertyMetadata(default(RelayCommand<int>)));
+        nameof(ExportCommand), typeof(RelayCommand<int>), typeof(SlotImportExportControl), new PropertyMetadata(default(RelayCommand<int>)));   
 
 }

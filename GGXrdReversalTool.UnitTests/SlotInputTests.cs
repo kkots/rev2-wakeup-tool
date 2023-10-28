@@ -86,6 +86,22 @@ public class SlotInputTests
         Assert.Equal(expected, slotInput.CondensedInputListText);
         
     }
+    
+    [Theory]
+    [InlineData("6,5*7", "6,5*7")]
+    [InlineData("6*1,5*7", "6,5*7")]
+    [InlineData("6*0,5*7", "5*7")]
+    [InlineData("5*7,5*1", "5*8")]
+    [InlineData("5h*7,5H*1", "5H*8")]
+    public void SlotInput_CondensedInputText_Test(string rawInputText, string expected)
+    {
+        var slotInput = new SlotInput(rawInputText);
+        
+        Assert.Equal(expected, slotInput.CondensedInputText);
+        
+    }
+
+  
 
     [Theory]
     [InlineData("6,2,3H", new []{"6", "2", "3H"})]

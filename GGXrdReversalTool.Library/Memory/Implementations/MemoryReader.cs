@@ -60,6 +60,33 @@ public class MemoryReader : IMemoryReader
         return Write(slotAddress, slotInput.Header.Concat(slotInput.Content));
     }
 
+    public SlotInput ReadInputFromSlot(int slotNumber)
+    {
+        if (slotNumber is < 1 or > 3)
+        {
+            throw new ArgumentException("Invalid Slot number", nameof(slotNumber));
+        }
+
+        var baseAddress = GetAddressWithOffsets(_pointerCollection.RecordingSlotPtr);
+        var slotAddress = IntPtr.Add(baseAddress, RecordingSlotSize * (slotNumber - 1));
+
+        var readBytes = ReadBytes(slotAddress, RecordingSlotSize);
+
+
+        var inputLength = byte.MaxValue * readBytes[5] + readBytes[4];
+
+        var headerLength = 4;
+
+        var length = 2 * (inputLength + headerLength);
+
+
+        var result = new byte[length];
+        Array.Copy(readBytes, result, 2 * (inputLength + headerLength));
+
+        return new SlotInput(result);
+
+    }
+
     public int GetComboCount(int player)
     {
         return player switch

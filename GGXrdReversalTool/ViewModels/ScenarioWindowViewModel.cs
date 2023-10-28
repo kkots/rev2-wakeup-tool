@@ -315,10 +315,8 @@ public class ScenarioWindowViewModel : ViewModelBase
 
         var slotInput = new SlotInput(content);
 
-        if (slotInput.IsValid)
+        if (slotInput.IsValid && _memoryReader.WriteInputInSlot(slotNumber, slotInput))
         {
-            _memoryReader.WriteInputInSlot(slotNumber, slotInput);
-            
             MessageBox.Show("Inputs has been inserted in slot : " + slotNumber, "Success", MessageBoxButton.OK, MessageBoxImage.Information);
         }
         else
@@ -340,7 +338,40 @@ public class ScenarioWindowViewModel : ViewModelBase
 
     private void Export(int slotNumber)
     {
-        throw new NotImplementedException();
+        var saveFileDialog = new SaveFileDialog
+        {
+            Filter = "Reversal Tool Replay Slot file (*.ggrs)|*.ggrs"
+        };
+
+        var dialogResult = saveFileDialog.ShowDialog();
+
+        if (!dialogResult.HasValue || !dialogResult.Value) return;
+
+        var slotInput = _memoryReader.ReadInputFromSlot(slotNumber);
+
+        if (slotInput.IsValid)
+        {
+            try
+            {
+                using var streamWriter = new StreamWriter(saveFileDialog.FileName);
+                
+                streamWriter.Write(slotInput.CondensedInputText);
+                
+                MessageBox.Show("Inputs Exported!");
+            }
+            catch (Exception e)
+            {
+                LogManager.Instance.WriteException(e);
+                
+                MessageBox.Show("Failed to export inputs!", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+        else
+        {
+            MessageBox.Show("Inputs are invalid!");
+        }
+
+
     }
 
 

@@ -56,6 +56,7 @@ public class SlotInput
 
     public IEnumerable<string> ExpandedInputList => GetExpandedFrameInputList(_rawInputText);
     public IEnumerable<string> CondensedInputListText => GetCondensedFrameInputListText(_rawInputText);
+    public string CondensedInputText => GetCondensedFrameInputListText(_rawInputText).Aggregate((a, b) => $"{a},{b}");
     public IEnumerable<CondensedInput> CondensedInputList => GetCondensedFrameInputList(_rawInputText);
     public IEnumerable<ushort> Content => GetContent(_rawInputText);
 

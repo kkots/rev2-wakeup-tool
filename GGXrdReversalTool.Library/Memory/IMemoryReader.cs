@@ -18,4 +18,5 @@ public interface IMemoryReader
     int GetPlayerSide();
     bool IsTrainingMode();
     Process Process { get; }
+    SlotInput ReadInputFromSlot(int slotNumber);
 }
