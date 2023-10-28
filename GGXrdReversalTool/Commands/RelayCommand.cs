@@ -22,9 +22,7 @@ public class RelayCommand<TActionParam> : ICommand
 
     public bool CanExecute(object? parameter)
     {
-        if (parameter is not TActionParam param) throw new InvalidOperationException();
-
-        return _canExecute(param);
+        return parameter is TActionParam param && _canExecute(param);
     }
 
     public void Execute(object? parameter)
