@@ -71,10 +71,7 @@ public sealed partial class ActionControl
 
         var dialogResult = saveFileDialog.ShowDialog();
 
-        if (!dialogResult.HasValue || !dialogResult.Value)
-        {
-            return;
-        }
+        if (!dialogResult.HasValue || !dialogResult.Value) return;
 
         var condensedInputText = new SlotInput(RawInputText).CondensedInputListText.Aggregate((a, b) => $"{a},{b}");
 
