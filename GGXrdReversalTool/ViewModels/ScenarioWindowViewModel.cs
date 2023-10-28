@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Windows;
@@ -9,12 +10,14 @@ using GGXrdReversalTool.Library.Logging;
 using GGXrdReversalTool.Library.Memory;
 using GGXrdReversalTool.Library.Memory.Implementations;
 using GGXrdReversalTool.Library.Models;
+using GGXrdReversalTool.Library.Models.Inputs;
 using GGXrdReversalTool.Library.Scenarios;
 using GGXrdReversalTool.Library.Scenarios.Action;
 using GGXrdReversalTool.Library.Scenarios.Event;
 using GGXrdReversalTool.Library.Scenarios.Event.Implementations;
 using GGXrdReversalTool.Library.Scenarios.Frequency;
 using GGXrdReversalTool.Updates;
+using Microsoft.Win32;
 
 namespace GGXrdReversalTool.ViewModels;
 
@@ -298,7 +301,30 @@ public class ScenarioWindowViewModel : ViewModelBase
 
     private void Import(int slotNumber)
     {
-        throw new NotImplementedException();
+        var openFileDialog = new OpenFileDialog
+        {
+            Filter = "Reversal Tool Replay Slot file (*.ggrs)|*.ggrs"
+        };
+        var dialogResult = openFileDialog.ShowDialog();
+
+        if (!dialogResult.HasValue || !dialogResult.Value) return;
+        
+        using var streamReader = new StreamReader(openFileDialog.FileName);
+
+        var content = streamReader.ReadToEnd();
+
+        var slotInput = new SlotInput(content);
+
+        if (slotInput.IsValid)
+        {
+            _memoryReader.WriteInputInSlot(slotNumber, slotInput);
+            
+            MessageBox.Show("Inputs has been inserted in slot : " + slotNumber, "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+        else
+        {
+            MessageBox.Show("Failed to import inputs!", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
     }
 
     private bool CanImport(int slotNumber)
