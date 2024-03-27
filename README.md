@@ -1,4 +1,13 @@
 # rev2-wakeup-tool
+
+[![License](https://img.shields.io/github/license/iquis/rev2-wakeup-tool?style=flat-square)](https://github.com/iquis/rev2-wakeup-tool/blob/master/LICENSE)
+[![Downloads](https://img.shields.io/github/downloads/iquis/rev2-wakeup-tool/total?style=flat-square)](https://github.com/iquis/rev2-wakeup-tool/releases/latest)
+[![Donate](https://shields.io/badge/ko--fi-support%20me-green?logo=ko-fi&style=flat-square)](https://ko-fi.com/iquis)
+[![Donate](https://shields.io/badge/paypal-support%20me-green?logo=paypal&style=flat-square)](https://paypal.me/Iquisiquis)
+[![Donate](https://shields.io/badge/patreon-support%20me-green?logo=patreon&style=flat-square)](https://patreon.com/Iquis)
+
+![rev2-wakeup-tool Logo](.github/logo/Haehyun.png "Wakeup tool Logo")
+
 Revesal-timing inputs for Guilty Gear Xrd: Revelator 2 in training mode.
 
 # How to Use:
