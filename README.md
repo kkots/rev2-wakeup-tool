@@ -34,9 +34,7 @@ No + signs.  Heavy slash is abbreviated "H".
 
 # Known Issues
 
-1. The blockstun end trigger doesn't work with blockstrings.
-
-2. Superflashes and roman cancel slowdown cause incorrect reversal timing.
+Nothing currently.
 
 ## Contributors
 <a href="https://github.com/Iquis/rev2-wakeup-tool/graphs/contributors">
