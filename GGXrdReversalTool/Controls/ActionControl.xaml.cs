@@ -3,11 +3,14 @@ using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Windows;
+using System.Windows.Data;
 using GGXrdReversalTool.Commands;
 using GGXrdReversalTool.Library.Logging;
 using GGXrdReversalTool.Library.Models.Inputs;
 using GGXrdReversalTool.Library.Scenarios.Action;
 using GGXrdReversalTool.Library.Scenarios.Action.Implementations;
+using GGXrdReversalTool.Library.Scenarios.Event;
+using GGXrdReversalTool.Library.Scenarios.Event.Implementations;
 using Microsoft.Win32;
 
 namespace GGXrdReversalTool.Controls;
@@ -30,6 +33,61 @@ public sealed partial class ActionControl
             OnPropertyChanged();
             CreateScenario();
         }
+    }
+    
+    private Visibility _tooShortInfoVisible = Visibility.Collapsed;
+    public Visibility TooShortInfoVisible
+    {
+        get => _tooShortInfoVisible;
+        set
+        {
+            if (value == _tooShortInfoVisible) return;
+            _tooShortInfoVisible = value;
+            OnPropertyChanged();
+        }
+    }
+    
+    private Visibility _noStartMarkerWarningVisible = Visibility.Collapsed;
+    public Visibility NoStartMarkerWarningVisible
+    {
+        get => _noStartMarkerWarningVisible;
+        set
+        {
+            if (value == _noStartMarkerWarningVisible) return;
+            _noStartMarkerWarningVisible = value;
+            OnPropertyChanged();
+        }
+    }
+    
+    private IScenarioEvent? _scenarioEvent;
+    public IScenarioEvent? ScenarioEvent
+    {
+        get => (IScenarioEvent)GetValue(ScenarioEventProperty);
+        set
+        {
+            if (_scenarioEvent == value) return;
+            _scenarioEvent = value;
+            UpdateWarnings();
+        }
+    }
+
+    public static readonly DependencyProperty ScenarioEventProperty =
+        DependencyProperty.Register(nameof(ScenarioEvent), typeof(IScenarioEvent), typeof(ActionControl),
+            new FrameworkPropertyMetadata(null, OnScenarioEventPropertyChanged)
+            {
+                BindsTwoWayByDefault = false
+            });
+
+    private static void OnScenarioEventPropertyChanged(DependencyObject source,
+        DependencyPropertyChangedEventArgs eventArgs)
+    {
+        if (source is not ActionControl control)
+        {
+            return;
+        }
+        
+        var value = eventArgs.NewValue;
+        control.ScenarioEvent = (IScenarioEvent)value;
     }
 
     public RelayCommand ImportCommand => new(Import);
@@ -131,6 +189,45 @@ public sealed partial class ActionControl
         {
             Input = new SlotInput(RawInputText)
         };
+        UpdateWarnings();
+    }
+    
+    private void UpdateWarnings()
+    {
+        UpdateTooShort();
+        UpdateMissingStart();
+    }
+    
+    private void UpdateTooShort()
+    {
+        if (ScenarioAction == null || RawInputText.Length == 0) {
+            TooShortInfoVisible = Visibility.Collapsed;
+            return;
+        }
+        int tooShortLength = 4;
+        int count = 0;
+        foreach (string input in ScenarioAction.Input.ExpandedInputList) {
+            ++count;
+            if (count > tooShortLength) break;
+        }
+        if (count != 0 && count <= tooShortLength) {
+            TooShortInfoVisible = Visibility.Visible;
+        } else {
+            TooShortInfoVisible = Visibility.Collapsed;
+        }
+    }
+    
+    private void UpdateMissingStart()
+    {
+        if (ScenarioEvent != null && ScenarioEvent is ComboEvent || RawInputText.Length == 0) {
+            NoStartMarkerWarningVisible = Visibility.Collapsed;
+            return;
+        }
+        if (!RawInputText.Contains('!')) {
+            NoStartMarkerWarningVisible = Visibility.Visible;
+        } else {
+            NoStartMarkerWarningVisible = Visibility.Collapsed;
+        }
     }
 
     //TODO Remove

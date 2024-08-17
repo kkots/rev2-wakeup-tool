@@ -116,6 +116,10 @@
       <Resource Include="patreon.png" />
       <None Remove="paypal.ico" />
       <Resource Include="paypal.ico" />
+      <None Remove="Images\Info.png" />
+      <Resource Include="Images\Info.png" />
+      <None Remove="Images\Warning.png" />
+      <Resource Include="Images\Warning.png" />
     </ItemGroup>
 
 </Project>
