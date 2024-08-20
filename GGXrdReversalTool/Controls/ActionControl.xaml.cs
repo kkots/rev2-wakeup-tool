@@ -19,17 +19,23 @@ public sealed partial class ActionControl
 {
     public ActionControl()
     {
+        _rawInputTexts = new string[3];
+        for (int i = 0; i < _rawInputTexts.Length; ++i)
+        {
+            _rawInputTexts[i] = string.Empty;
+        }
         InitializeComponent();
     }
+    
 
-    private string _rawInputText = string.Empty;
+    private string[] _rawInputTexts;
     public string RawInputText
     {
-        get => _rawInputText;
+        get => _rawInputTexts[_slotNumber - 1];
         set
         {
-            if (value == _rawInputText) return;
-            _rawInputText = value;
+            if (value == _rawInputTexts[_slotNumber - 1]) return;
+            _rawInputTexts[_slotNumber - 1] = value;
             OnPropertyChanged();
             CreateScenario();
         }
@@ -88,6 +94,57 @@ public sealed partial class ActionControl
         
         var value = eventArgs.NewValue;
         control.ScenarioEvent = (IScenarioEvent)value;
+    }
+    
+    private int _slotNumber = 1;
+    public int SlotNumber
+    {
+        get => (int)GetValue(SlotNumberProperty);
+        set
+        {
+            int coercedValue = Math.Clamp(value, 1, 3);
+            if (_slotNumber == coercedValue) return;
+            _slotNumber = coercedValue;
+            OnPropertyChanged("RawInputText");
+            CreateScenario();
+        }
+    }
+
+    public static readonly DependencyProperty SlotNumberProperty =
+        DependencyProperty.Register(nameof(SlotNumber), typeof(int), typeof(ActionControl),
+            new FrameworkPropertyMetadata(1, OnSlotNumberPropertyChanged, OnCoerceSlotNumberProperty)
+            {
+                BindsTwoWayByDefault = false
+            });
+
+    private static object OnCoerceSlotNumberProperty(DependencyObject source, object baseValue)
+    {
+        if (baseValue is not int value)
+        {
+            return SlotNumberProperty.DefaultMetadata.DefaultValue;
+        }
+
+        switch (value)
+        {
+            case 1:
+            case 2:
+            case 3:
+                return value;
+
+        }
+
+        return SlotNumberProperty.DefaultMetadata.DefaultValue;
+    }
+    private static void OnSlotNumberPropertyChanged(DependencyObject source,
+        DependencyPropertyChangedEventArgs eventArgs)
+    {
+        if (source is not ActionControl control)
+        {
+            return;
+        }
+
+        var value = eventArgs.NewValue;
+        control.SlotNumber = (int)value;
     }
 
     public RelayCommand ImportCommand => new(Import);
@@ -149,7 +206,7 @@ public sealed partial class ActionControl
     }
     private bool CanExport()
     {
-        return ScenarioAction is { Input.IsValid: true };
+        return ScenarioAction != null && ScenarioAction.Inputs[_slotNumber - 1].IsValid;
     }
 
     #region InsertPresetInputCommand
@@ -185,9 +242,16 @@ public sealed partial class ActionControl
 
     private void CreateScenario()
     {
+        SlotInput[] inputs = new SlotInput[3];
+        for (int i = 0; i < inputs.Length; ++i)
+        {
+            inputs[i] = new SlotInput(_rawInputTexts[i]);
+        }
+        
         ScenarioAction = new PlayReversalAction
         {
-            Input = new SlotInput(RawInputText)
+            Inputs = inputs,
+            SlotNumber = _slotNumber
         };
         UpdateWarnings();
     }
@@ -206,7 +270,7 @@ public sealed partial class ActionControl
         }
         int tooShortLength = 4;
         int count = 0;
-        foreach (string input in ScenarioAction.Input.ExpandedInputList) {
+        foreach (string input in ScenarioAction.Inputs[_slotNumber - 1].ExpandedInputList) {
             ++count;
             if (count > tooShortLength) break;
         }
@@ -229,7 +293,6 @@ public sealed partial class ActionControl
             NoStartMarkerWarningVisible = Visibility.Collapsed;
         }
     }
-
     //TODO Remove
     private bool IsLegacyFile(string content)
     {
