@@ -32,10 +32,10 @@
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="26"/>
-                        <ColumnDefinition Width="26"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
-                    <Image Grid.Column="0" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="5" Source="../Images/info.png" Height="16" ToolTipService.ToolTip="Sequences shorter than 5f cannot participate in Random slot playback." Visibility="{Binding TooShortInfoVisible, ElementName=Control}"/>
+                    <Image Grid.Column="0" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="5" Source="../Images/info.png" Height="16" ToolTipService.ToolTip="Sequences shorter than 5f cannot participate in the in-game, built-in Random slot playback (but can in this mod's random playback)." Visibility="{Binding TooShortInfoVisible, ElementName=Control}"/>
                     <Image Grid.Column="1" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="5" Source="../Images/warning.png" Height="16" ToolTipService.ToolTip="Missing &quot;!&quot; character, denoting the reversal frame." Visibility="{Binding NoStartMarkerWarningVisible, ElementName=Control}"/>
                 </Grid>
                 <local:PresetMenu Grid.Column="1" Margin="0,5" InsertPresetInputCommand="{Binding ElementName=Control, Path=InsertPresetInputCommand}"/>

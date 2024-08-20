@@ -6,9 +6,11 @@
              StartupUri="MainWindow.xaml">
     <Application.Resources>
         <converters:PercentageFrequencyConverter x:Key="PercentageFrequencyConverter" />
+        <converters:RandomSlotHeaderConverter x:Key="RandomSlotHeaderConverter" />
         <converters:InputConverter x:Key="InputConverter" />
         <converters:InputSplitConverter x:Key="InputSplitConverter" />
         <converters:AntiBooleanConverter x:Key="AntiBooleanConverter" />
         <converters:VisibilityCollapsedConverter x:Key="VisibilityCollapsedConverter"/>
+        <converters:AntiVisibilityCollapsedConverter x:Key="AntiVisibilityCollapsedConverter"/>
     </Application.Resources>
 </Application>
