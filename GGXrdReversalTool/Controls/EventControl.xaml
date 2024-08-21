@@ -61,7 +61,10 @@
                 </WrapPanel>
             </Grid>
         </DataTemplate>
-        <local:EventControlDataTemplateSelector x:Key="EventControlDataTemplateSelector" ComboDataTemplate="{StaticResource ComboDataTemplate}" AnimationDataTemplate="{StaticResource AnimationDataTemplate}" />
+        <DataTemplate x:Key="SimulatedRoundstartDataTemplate">
+            <TextBlock TextWrapping="Wrap" Text="Tap blitz to trigger"/>
+        </DataTemplate>
+        <local:EventControlDataTemplateSelector x:Key="EventControlDataTemplateSelector" ComboDataTemplate="{StaticResource ComboDataTemplate}" AnimationDataTemplate="{StaticResource AnimationDataTemplate}" SimulatedRoundstartDataTemplate="{StaticResource SimulatedRoundstartDataTemplate}" />
     </local:NotifiedUserControl.Resources>
     <GroupBox Header="When">
         <Grid>
@@ -69,7 +72,7 @@
                 <RowDefinition Height="Auto"/>
                 <RowDefinition/>
             </Grid.RowDefinitions>
-            <ComboBox ItemsSource="{Binding ElementName=Control, Path=ActionTypes}" SelectedValue="{Binding ElementName=Control, Path=SelectedScenarioEvent}" VerticalAlignment="Center" Margin="0,5,0,5"/>
+            <ComboBox ItemsSource="{Binding ElementName=Control, Path=ActionTypes}" SelectedValue="{Binding ElementName=Control, Path=SelectedScenarioEventString}" VerticalAlignment="Center" Margin="0,5,0,5"/>
             <ContentControl Grid.Row="1" Content="{Binding ElementName=Control, Path=SelectedScenarioEvent}" ContentTemplateSelector="{StaticResource EventControlDataTemplateSelector}"/>
         </Grid>
         

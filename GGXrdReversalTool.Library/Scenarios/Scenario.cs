@@ -72,6 +72,8 @@ public class Scenario : IDisposable
             LogManager.Instance.WriteLine("Scenario Thread start");
             var localRunThread = true;
 
+            uint oldWhatCanDoFlags = 0;
+            bool dummyLocked = false;
             var engineTicks = _memoryReader.GetEngineTickCount();
             var prevEngineTicks = engineTicks;
             int pickedSlot = -1;
@@ -138,6 +140,12 @@ public class Scenario : IDisposable
                             }
                         }
                         
+                        if (dummyLocked && 0 == framesUntilEvent)
+                        {
+                            dummyLocked = false;
+                            _memoryReader.UnlockDummy(1 - _memoryReader.GetPlayerSide(), oldWhatCanDoFlags);
+                        }
+                        
                         if (pickedSlot != -1
                             && !mustIgnoreEvent
                             && framesUntilEvent < int.MaxValue
@@ -157,6 +165,14 @@ public class Scenario : IDisposable
                                 if (_usedSlots.Length > 1)
                                 {
                                     _scenarioAction.Init(pickedSlot);
+                                }
+                                if (dependsOnReversalFrame
+                                        && _scenarioAction.Inputs[pickedSlot - 1].ReversalFrameIndex > 0
+                                        && _scenarioEvent.NeedLockDummyUntilEvent()
+                                        && !dummyLocked)
+                                {
+                                    dummyLocked = true;
+                                    _memoryReader.LockDummy(1 - _memoryReader.GetPlayerSide(), out oldWhatCanDoFlags);
                                 }
                                 _scenarioAction.Execute();
                             }
@@ -178,6 +194,11 @@ public class Scenario : IDisposable
 
             timeEndPeriod(1);
             
+            if (dummyLocked)
+            {
+                dummyLocked = false;
+                _memoryReader.UnlockDummy(1 - _memoryReader.GetPlayerSide(), oldWhatCanDoFlags);
+            }
             LogManager.Instance.WriteLine("Scenario Thread ended");
         });
 
