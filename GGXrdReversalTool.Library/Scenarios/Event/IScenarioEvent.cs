@@ -13,4 +13,5 @@ public interface IScenarioEvent
     }
     bool CanEnable(IScenarioAction action, int slotNumber);
     bool DependsOnReversalFrame();
+    public bool NeedLockDummyUntilEvent() => false;
 }

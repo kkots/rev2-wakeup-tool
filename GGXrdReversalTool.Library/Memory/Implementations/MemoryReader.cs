@@ -76,6 +76,23 @@ public class MemoryReader : IMemoryReader
         return Write(slotAddress, slotInput.Header.Concat(slotInput.Content));
     }
 
+    public void LockDummy(int player, out uint oldFlags)
+    {
+        oldFlags = 0;
+        if (player is < 0 or > 1)
+            return;
+            
+        oldFlags = Read<uint>(_pointerCollection.Players[player].WhatCanDoFlagsPtr);
+        Write(_pointerCollection.Players[player].WhatCanDoFlagsPtr, 0);
+    }
+    public void UnlockDummy(int player, uint oldFlags)
+    {
+        if (player is < 0 or > 1)
+            return;
+            
+        Write(_pointerCollection.Players[player].WhatCanDoFlagsPtr, (int)oldFlags);
+    }
+
     public SlotInput ReadInputFromSlot(int slotNumber)
     {
         if (slotNumber is < 1 or > 3)
@@ -306,6 +323,7 @@ public class MemoryReader : IMemoryReader
             public readonly MemoryPointer FacingPtr;
             public readonly MemoryPointer AnimFramePtr;
             public readonly MemoryPointer SlowdownFramesPtr;
+            public readonly MemoryPointer WhatCanDoFlagsPtr;
 
             public PlayerData(int matchPtrAddr, int index)
             {
@@ -320,6 +338,7 @@ public class MemoryReader : IMemoryReader
                 FacingPtr = new MemoryPointer(matchPtrAddr, playerOffset + 0x4d38);
                 AnimFramePtr = new MemoryPointer(matchPtrAddr, playerOffset + 0x130); // 0x134? Both work for now
                 SlowdownFramesPtr = new MemoryPointer(matchPtrAddr, playerOffset + 0x261fc);
+                WhatCanDoFlagsPtr = new MemoryPointer(matchPtrAddr, playerOffset + 0x4d3c);  // Normally holds B001716E
             }
         };
         public ImmutableArray<PlayerData> Players { get; private set; }
