@@ -25,6 +25,8 @@
 
     <ItemGroup>
       <None Remove="Images\Inputs\22px-GGXRD_P_Prompt.png" />
+      <None Remove="install_dotnet.sh" />
+      <None Remove="launch_GGXrdReversalTool_linux.sh" />
       <Resource Include="Images\Inputs\22px-GGXRD_P_Prompt.png" />
       <None Remove="Images\Inputs\22px-GGXRD_D_Prompt.png" />
       <Resource Include="Images\Inputs\22px-GGXRD_D_Prompt.png" />
@@ -116,6 +118,16 @@
       <Resource Include="patreon.png" />
       <None Remove="paypal.ico" />
       <Resource Include="paypal.ico" />
+      <None Remove="Images\Info.png" />
+      <Resource Include="Images\Info.png" />
+      <None Remove="Images\Warning.png" />
+      <Content Include="install_dotnet.sh">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <Content Include="launch_GGXrdReversalTool_linux.sh">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <Resource Include="Images\Warning.png" />
     </ItemGroup>
 
 </Project>
