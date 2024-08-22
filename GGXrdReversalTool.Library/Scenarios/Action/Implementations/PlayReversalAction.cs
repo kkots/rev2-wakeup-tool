@@ -13,6 +13,12 @@ public class PlayReversalAction : IScenarioAction
     public IMemoryReader? MemoryReader { get; set; }
     public SlotInput[] Inputs { get; set; } = null!;
     public bool IsRunning { get; private set; }
+    public bool[] GuaranteeChargeInputArray { get; set; }
+
+    public PlayReversalAction()
+    {
+        GuaranteeChargeInputArray = new bool[]{ false, false, false };
+    }
 
     public void Init(int slotNumber)
     {
@@ -25,14 +31,19 @@ public class PlayReversalAction : IScenarioAction
     }
     public int SlotNumber { get; set; } = 1;
 
-    public void Execute(int slotNumber)
+    public void Execute(int slotNumberGame, int slotNumberTool)
     {
         if (MemoryReader == null)
         {
             return;
         }
         LogManager.Instance.WriteLine("PlayReversalAction Execute!");
-        MemoryReader.SetDummyPlayback(slotNumber, 0, MemoryReader.GetFacing(1 - MemoryReader.GetPlayerSide()));
+        int playerSide = MemoryReader.GetPlayerSide();
+        if (GuaranteeChargeInputArray[slotNumberTool - 1])
+        {
+            MemoryReader.GuaranteeChargeInput(1 - playerSide, playerSide);
+        }
+        MemoryReader.SetDummyPlayback(slotNumberGame, 0, MemoryReader.GetFacing(1 - playerSide));
         IsRunning = true;
     }
 

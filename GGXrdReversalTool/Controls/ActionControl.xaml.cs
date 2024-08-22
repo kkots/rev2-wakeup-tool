@@ -19,9 +19,11 @@ public sealed partial class ActionControl
     public ActionControl()
     {
         _rawInputTexts = new string[3];
+        _guaranteeChargeInputArray = new bool[3];
         for (int i = 0; i < _rawInputTexts.Length; ++i)
         {
             _rawInputTexts[i] = string.Empty;
+            _guaranteeChargeInputArray[i] = false;
         }
         InitializeComponent();
     }
@@ -76,6 +78,19 @@ public sealed partial class ActionControl
         }
     }
     
+    private bool[] _guaranteeChargeInputArray;
+    public bool GuaranteeChargeInput
+    {
+        get => _guaranteeChargeInputArray[_slotNumber - 1];
+        set
+        {
+            if (value == _guaranteeChargeInputArray[_slotNumber - 1]) return;
+            _guaranteeChargeInputArray[_slotNumber - 1] = value;
+            OnPropertyChanged();
+            CreateScenario();
+        }
+    }
+    
     private IScenarioEvent? _scenarioEvent;
     public IScenarioEvent? ScenarioEvent
     {
@@ -117,6 +132,7 @@ public sealed partial class ActionControl
             if (_slotNumber == coercedValue) return;
             _slotNumber = coercedValue;
             OnPropertyChanged("RawInputText");
+            OnPropertyChanged("GuaranteeChargeInput");
             CreateScenario();
         }
     }
@@ -262,7 +278,8 @@ public sealed partial class ActionControl
         ScenarioAction = new PlayReversalAction
         {
             Inputs = inputs,
-            SlotNumber = _slotNumber
+            SlotNumber = _slotNumber,
+            GuaranteeChargeInputArray = _guaranteeChargeInputArray
         };
         UpdateWarnings();
     }
