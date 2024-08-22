@@ -10,7 +10,6 @@ using GGXrdReversalTool.Library.Models.Inputs;
 using GGXrdReversalTool.Library.Scenarios.Action;
 using GGXrdReversalTool.Library.Scenarios.Action.Implementations;
 using GGXrdReversalTool.Library.Scenarios.Event;
-using GGXrdReversalTool.Library.Scenarios.Event.Implementations;
 using Microsoft.Win32;
 
 namespace GGXrdReversalTool.Controls;
@@ -61,6 +60,18 @@ public sealed partial class ActionControl
         {
             if (value == _noStartMarkerWarningVisible) return;
             _noStartMarkerWarningVisible = value;
+            OnPropertyChanged();
+        }
+    }
+    
+    private Visibility _noNeedStartMarkerInfoVisible = Visibility.Collapsed;
+    public Visibility NoNeedStartMarkerInfoVisible
+    {
+        get => _noNeedStartMarkerInfoVisible;
+        set
+        {
+            if (value == _noNeedStartMarkerInfoVisible) return;
+            _noNeedStartMarkerInfoVisible = value;
             OnPropertyChanged();
         }
     }
@@ -260,6 +271,7 @@ public sealed partial class ActionControl
     {
         UpdateTooShort();
         UpdateMissingStart();
+        UpdateNoNeedStart();
     }
     
     private void UpdateTooShort()
@@ -283,7 +295,7 @@ public sealed partial class ActionControl
     
     private void UpdateMissingStart()
     {
-        if (ScenarioEvent != null && ScenarioEvent is ComboEvent || RawInputText.Length == 0) {
+        if (ScenarioEvent != null && !ScenarioEvent.DependsOnReversalFrame() || RawInputText.Length == 0) {
             NoStartMarkerWarningVisible = Visibility.Collapsed;
             return;
         }
@@ -292,6 +304,18 @@ public sealed partial class ActionControl
         } else {
             NoStartMarkerWarningVisible = Visibility.Collapsed;
         }
+    }
+    
+    private void UpdateNoNeedStart()
+    {
+        if (ScenarioEvent != null && ScenarioEvent.DependsOnReversalFrame()
+                || RawInputText.Length == 0
+                || ScenarioAction != null && ScenarioAction.Inputs[_slotNumber - 1].ReversalFrameIndex <= 0
+                || !RawInputText.Contains('!')) {
+            NoNeedStartMarkerInfoVisible = Visibility.Collapsed;
+            return;
+        }
+        NoNeedStartMarkerInfoVisible = Visibility.Visible;
     }
     //TODO Remove
     private bool IsLegacyFile(string content)
