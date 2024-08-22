@@ -34,4 +34,5 @@ public interface IMemoryReader
     void UnlockDummy(int player, uint oldFlags);
     int GetTimeUntilTech(int player);
     int GetYPos(int player);
+    bool GetTechRelatedFlag(int player);
 }

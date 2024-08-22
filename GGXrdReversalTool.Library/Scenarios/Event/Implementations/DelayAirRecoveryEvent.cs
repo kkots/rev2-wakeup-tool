@@ -16,9 +16,9 @@ public class DelayAirRecoveryEvent : IScenarioEvent
         var playerSide = MemoryReader.GetPlayerSide();
         var dummySide = 1 - playerSide;
         var timeUntilTech = MemoryReader.GetTimeUntilTech(dummySide);
-        var yPos = MemoryReader.GetYPos(dummySide);
+        bool hasTechRelatedFlag = MemoryReader.GetTechRelatedFlag(dummySide);
 
-        return timeUntilTech == 1 && yPos > 0 ? 0 : int.MaxValue;
+        return timeUntilTech == 1 && hasTechRelatedFlag ? 0 : int.MaxValue;
     }
     public bool CanEnable(IScenarioAction action, int slotNumber)
     {
