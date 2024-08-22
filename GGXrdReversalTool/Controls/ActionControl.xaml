@@ -13,7 +13,7 @@
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
             <TextBlock TextWrapping="Wrap" Text="Action to perform :" Margin="0,5"/>
@@ -41,7 +41,9 @@
                 </Grid>
                 <local:PresetMenu Grid.Column="1" Margin="0,5" InsertPresetInputCommand="{Binding ElementName=Control, Path=InsertPresetInputCommand}"/>
             </Grid>
-            <local:CondensedInputControl MinHeight="50" Grid.Row="3" Margin="0,5" CondensedInputs="{Binding ElementName=Control, Path=RawInputText, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource InputConverter}}"/>
+            <ScrollViewer Grid.Row="3" MinHeight="50" Margin="0,5">
+                <local:CondensedInputControl CondensedInputs="{Binding ElementName=Control, Path=RawInputText, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource InputConverter}}"/>
+            </ScrollViewer>
             <DockPanel Grid.Row="4" LastChildFill="False">
                 <Button Content="Import" DockPanel.Dock="Left" Width="75" Command="{Binding ElementName=Control, Path=ImportCommand}"></Button>
                 <Button Content="Export" DockPanel.Dock="Right" Width="75" Command="{Binding ElementName=Control, Path=ExportCommand}" ></Button>
