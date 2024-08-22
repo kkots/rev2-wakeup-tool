@@ -25,6 +25,7 @@
 
     <ItemGroup>
       <None Remove="Images\Inputs\22px-GGXRD_P_Prompt.png" />
+      <None Remove="Images\question.png" />
       <None Remove="install_dotnet.sh" />
       <None Remove="launch_GGXrdReversalTool_linux.sh" />
       <Resource Include="Images\Inputs\22px-GGXRD_P_Prompt.png" />
@@ -107,6 +108,7 @@
       <None Remove="Haehyun.png" />
       <Resource Include="Haehyun.png" />
       <None Remove="twitter.ico" />
+      <Resource Include="Images\Question.png" />
       <Resource Include="twitter.ico" />
       <None Remove="facebook.ico" />
       <Resource Include="facebook.ico" />

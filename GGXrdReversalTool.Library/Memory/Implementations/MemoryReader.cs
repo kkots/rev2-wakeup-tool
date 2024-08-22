@@ -106,6 +106,41 @@ public class MemoryReader : IMemoryReader
             
         return Read<int>(_pointerCollection.Players[player].YPos);
     }
+    public bool GuaranteeChargeInput(int dummy, int player)
+    {
+        var data = _pointerCollection.InputRingBuffers[dummy];
+        ushort curIndex = Read<ushort>(data.IndexPtr);
+        MemoryPointer framesHeldBase = data.FramesHeldBasePtr;
+        ushort curFramesHeld = Read<ushort>(framesHeldBase.OffsetBy(curIndex * 2));
+        bool result = true;
+        if (curFramesHeld < 45)
+        {
+            result = result && Write(framesHeldBase.OffsetBy(curIndex * 2), 45);
+        }
+        MemoryPointer inputsBase = data.InputsBasePtr;
+        int playerX = Read<int>(_pointerCollection.Players[player].XPos);
+        int dummyX = Read<int>(_pointerCollection.Players[dummy].XPos);
+        ushort input = 0xA;  // down-forward (in the unmirrored world direction coordinate system)
+        if (playerX > dummyX)
+        {
+            input = 0x6;  // down-back
+        }
+        else if (playerX == dummyX)
+        {
+            // if this is a cornersteal situation
+            // you will keep facing the direction you were facing before
+            // because corner will be stolen
+            // because cornersteal can only happen with throws or airthrows
+            // that make the thrown face away from the thrower
+            int facing = Read<int>(_pointerCollection.Players[player].FacingPtr);
+            if (facing == 0)  // facing right
+            {
+                input = 0x6;
+            }
+        }
+        result = result && Write(inputsBase.OffsetBy(curIndex * 2), input);
+        return result;
+    }
 
     public SlotInput ReadInputFromSlot(int slotNumber)
     {
@@ -166,7 +201,7 @@ public class MemoryReader : IMemoryReader
     {
         if (player is < 0 or > 1)
             throw new ArgumentException($"Player index is invalid : {player}");
-        return Read<int>(_pointerCollection.Players[player].FacingPtr);
+        return Read<int>(_pointerCollection.Players[player].WantThisFacingPtr);
     }
 
     public int GetAnimFrame(int player)
@@ -335,10 +370,12 @@ public class MemoryReader : IMemoryReader
             public readonly MemoryPointer BlockStunPtr;
             public readonly MemoryPointer HitstopPtr;
             public readonly MemoryPointer FacingPtr;
+            public readonly MemoryPointer WantThisFacingPtr;
             public readonly MemoryPointer AnimFramePtr;
             public readonly MemoryPointer SlowdownFramesPtr;
             public readonly MemoryPointer WhatCanDoFlagsPtr;
             public readonly MemoryPointer TimeUntilTech;
+            public readonly MemoryPointer XPos;
             public readonly MemoryPointer YPos;
 
             public PlayerData(int matchPtrAddr, int index)
@@ -351,15 +388,43 @@ public class MemoryReader : IMemoryReader
                 ComboCountPtr = new MemoryPointer(matchPtrAddr, playerOffset + 0x9f28);
                 BlockStunPtr = new MemoryPointer(matchPtrAddr, playerOffset + 0x4d54);
                 HitstopPtr = new MemoryPointer(matchPtrAddr, playerOffset + 0x1ac);
-                FacingPtr = new MemoryPointer(matchPtrAddr, playerOffset + 0x4d38);
+                // This is the current facing of the character's sprite.
+                FacingPtr = new MemoryPointer(matchPtrAddr, playerOffset + 0x248);
+                // This is the facing the character is going to turn towards specifically (?) after waking up.
+                // It is usually equal to FacingPtr, except during the wake up animation when the player is behind
+                // the dummy's back.
+                WantThisFacingPtr = new MemoryPointer(matchPtrAddr, playerOffset + 0x4d38);
                 AnimFramePtr = new MemoryPointer(matchPtrAddr, playerOffset + 0x130); // 0x134? Both work for now
                 SlowdownFramesPtr = new MemoryPointer(matchPtrAddr, playerOffset + 0x261fc);
                 WhatCanDoFlagsPtr = new MemoryPointer(matchPtrAddr, playerOffset + 0x4d3c);  // Normally holds B001716E
                 TimeUntilTech = new MemoryPointer(matchPtrAddr, playerOffset + 0x9808);
+                XPos = new MemoryPointer(matchPtrAddr, playerOffset + 0x24c);
                 YPos = new MemoryPointer(matchPtrAddr, playerOffset + 0x250);
             }
         };
+        public class InputRingBufferData
+        {
+            public readonly MemoryPointer BasePtr;
+            public readonly MemoryPointer LastInputPtr;
+            public readonly MemoryPointer CurrentInputPtr;
+            public readonly MemoryPointer InputsBasePtr;
+            public readonly MemoryPointer FramesHeldBasePtr;
+            public readonly MemoryPointer IndexPtr;
+
+            public InputRingBufferData(int matchPtrAddr, int index)
+            {
+                int baseOffset = 0x1c6d38 + index * 0x7e;
+
+                BasePtr = new MemoryPointer(matchPtrAddr, baseOffset);
+                LastInputPtr = BasePtr;  // ushort lastinput
+                CurrentInputPtr = new MemoryPointer(matchPtrAddr, baseOffset + 0x2);  // ushort curinput
+                InputsBasePtr = new MemoryPointer(matchPtrAddr, baseOffset + 0x4);  // ushort inputs[30]
+                FramesHeldBasePtr = new MemoryPointer(matchPtrAddr, baseOffset + 0x40);  // ushort framesheld[30]
+                IndexPtr = new MemoryPointer(matchPtrAddr, baseOffset + 0x7c); // ushort index
+            }
+        };
         public ImmutableArray<PlayerData> Players { get; private set; }
+        public ImmutableArray<InputRingBufferData> InputRingBuffers { get; private set; }
         public MemoryPointer FrameCountPtr { get; private set; } = null!;
         public MemoryPointer RecordingSlotPtr { get; private set; } = null!;
         public MemoryPointer PlayerSidePtr { get; private set; } = null!;
@@ -437,6 +502,10 @@ public class MemoryReader : IMemoryReader
             // Global 64 bit tick counter for the main loop incremented shortly after ticking everything
             const string engineTickCountPattern = "dQWD+AV2FPIPEEcQ";
             EngineTickCountPtr = new MemoryPointer(_memoryReader.Read<int>(textAddr - 4 + FindPatternOffset(text, engineTickCountPattern)));
+            
+            InputRingBuffers = ImmutableArray.Create(
+                new InputRingBufferData(matchPtrAddr, 0),
+                new InputRingBufferData(matchPtrAddr, 1));
         }
 
         private int FindPatternOffset(in byte[] haystack, in byte[] needle)

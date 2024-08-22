@@ -158,7 +158,7 @@ public class Scenario : IDisposable
                             bool actionValid = _scenarioEvent.CanEnable(_scenarioAction, pickedSlot);
                             if (!actionValid)
                             {
-                                _scenarioAction.Execute(pickedSlot);
+                                _scenarioAction.Execute(pickedSlot, pickedSlot);
                             }
                             else 
                             {
@@ -174,7 +174,7 @@ public class Scenario : IDisposable
                                     dummyLocked = true;
                                     _memoryReader.LockDummy(1 - _memoryReader.GetPlayerSide(), out oldWhatCanDoFlags);
                                 }
-                                _scenarioAction.Execute();
+                                _scenarioAction.Execute(_scenarioAction.SlotNumber, pickedSlot);
                             }
                             pickedSlot = -1;
 

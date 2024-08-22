@@ -34,4 +34,13 @@ public interface IMemoryReader
     void UnlockDummy(int player, uint oldFlags);
     int GetTimeUntilTech(int player);
     int GetYPos(int player);
+    /// <summary>
+    /// Guarantees charge input for the dummy in direction opposite from the player.
+    /// So for ex. if player is on the left of the dummy the dummy would have charged
+    /// (held) right.
+    /// </summary>
+    /// <param name="dummy">The dummy create charge for</param>
+    /// <param name="player">The player away from whom to charge</param>
+    /// <returns>true on success, false on failure</returns>
+    bool GuaranteeChargeInput(int dummy, int player);
 }
