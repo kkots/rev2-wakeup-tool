@@ -1,10 +1,9 @@
-﻿using System.ComponentModel;
-
-namespace GGXrdReversalTool.Library.Scenarios.Event;
+﻿namespace GGXrdReversalTool.Library.Scenarios.Event;
 
 public enum ScenarioEventTypes
 {
     Combo,
     Animation,
-    SimulatedRoundstart
+    SimulatedRoundstart,
+    DelayAirRecovery
 }
