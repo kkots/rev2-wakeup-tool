@@ -14,7 +14,36 @@ public sealed partial class EventControl
         InitializeComponent();
     }
 
-    public IEnumerable<ScenarioEventTypes> ActionTypes => Enum.GetValues<ScenarioEventTypes>();
+    public IEnumerable<object> ActionTypes => new string[]{"Animation", "Combo", "Simulated roundstart"};
+
+    private string _selectedScenarioEventString = string.Empty;
+    public string? SelectedScenarioEventString
+    {
+        get => _selectedScenarioEventString;
+        set
+        {
+            if (value == _selectedScenarioEventString) return;
+            
+            _selectedScenarioEventString = value;
+            
+            switch (_selectedScenarioEventString)
+            {
+                case "Animation":
+                    SelectedScenarioEvent = ScenarioEventTypes.Animation;
+                    break;
+                case "Combo":
+                    SelectedScenarioEvent = ScenarioEventTypes.Combo;
+                    break;
+                case "Simulated roundstart":
+                    SelectedScenarioEvent = ScenarioEventTypes.SimulatedRoundstart;
+                    break;
+            }
+            
+            OnPropertyChanged();
+            
+            CreateScenario();
+        }
+    }
 
     private ScenarioEventTypes? _selectedScenarioEvent;
     public ScenarioEventTypes? SelectedScenarioEvent
@@ -158,6 +187,9 @@ public sealed partial class EventControl
                 MaxComboCount = MaxComboCount,
                 MinComboCount = MinComboCount
             },
+            ScenarioEventTypes.SimulatedRoundstart => new SimulatedRoundstartEvent
+            {
+            },
             _ => null
             
         };
@@ -170,6 +202,7 @@ public class EventControlDataTemplateSelector : DataTemplateSelector
 {
     public DataTemplate ComboDataTemplate { get; set; } = null!;
     public DataTemplate AnimationDataTemplate { get; set; } = null!;
+    public DataTemplate SimulatedRoundstartDataTemplate { get; set; } = null!;
 
     public override DataTemplate SelectTemplate(object item, DependencyObject container)
     {
@@ -179,6 +212,7 @@ public class EventControlDataTemplateSelector : DataTemplateSelector
             {
                 ScenarioEventTypes.Animation => AnimationDataTemplate,
                 ScenarioEventTypes.Combo => ComboDataTemplate,
+                ScenarioEventTypes.SimulatedRoundstart => SimulatedRoundstartDataTemplate,
                 _ => new DataTemplate()
             };
         }
