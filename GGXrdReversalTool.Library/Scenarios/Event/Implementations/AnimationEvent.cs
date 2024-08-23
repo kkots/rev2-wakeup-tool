@@ -1,5 +1,6 @@
 ﻿using GGXrdReversalTool.Library.Memory;
 using GGXrdReversalTool.Library.Memory.Implementations;
+using GGXrdReversalTool.Library.Scenarios.Action;
 
 namespace GGXrdReversalTool.Library.Scenarios.Event.Implementations;
 
@@ -71,6 +72,14 @@ public class AnimationEvent : IScenarioEvent
             result += freezeFrames;
 
         return result;
+    }
+    public bool CanEnable(IScenarioAction action, int slotNumber)
+    {
+        return action.Inputs[slotNumber - 1].IsReversalValid && IsValid;
+    }
+    public bool DependsOnReversalFrame()
+    {
+        return true;
     }
     
 }

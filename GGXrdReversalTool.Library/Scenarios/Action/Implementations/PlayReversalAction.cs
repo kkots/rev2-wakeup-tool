@@ -11,28 +11,28 @@ namespace GGXrdReversalTool.Library.Scenarios.Action.Implementations;
 public class PlayReversalAction : IScenarioAction
 {
     public IMemoryReader? MemoryReader { get; set; }
-    public SlotInput Input { get; set; } = null!;
+    public SlotInput[] Inputs { get; set; } = null!;
     public bool IsRunning { get; private set; }
 
-    public void Init()
+    public void Init(int slotNumber)
     {
         if (MemoryReader == null)
         {
             return;
         }
 
-        MemoryReader.WriteInputInSlot(SlotNumber, Input);
+        MemoryReader.WriteInputInSlot(SlotNumber, Inputs[slotNumber - 1]);
     }
     public int SlotNumber { get; set; } = 1;
 
-    public void Execute()
+    public void Execute(int slotNumber)
     {
         if (MemoryReader == null)
         {
             return;
         }
         LogManager.Instance.WriteLine("PlayReversalAction Execute!");
-        MemoryReader.SetDummyPlayback(SlotNumber, 0, MemoryReader.GetFacing(1 - MemoryReader.GetPlayerSide()));
+        MemoryReader.SetDummyPlayback(slotNumber, 0, MemoryReader.GetFacing(1 - MemoryReader.GetPlayerSide()));
         IsRunning = true;
     }
 
