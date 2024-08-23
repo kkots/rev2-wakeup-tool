@@ -140,7 +140,8 @@ public sealed partial class FrequencyControl : NotifiedUserControl
             CreateScenario();
         }
     }
-    private int[] _otherSlidersStartingValues = {0, 0};
+
+    private int[] _otherSlidersStartingValues = new int[2];
     private int _lastChangedSlider = -1;
 
     public IScenarioFrequency? ScenarioFrequency

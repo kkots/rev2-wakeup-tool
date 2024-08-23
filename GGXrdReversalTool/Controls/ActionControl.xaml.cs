@@ -21,7 +21,7 @@ public sealed partial class ActionControl
     }
     
 
-    private string[] _rawInputTexts = {string.Empty, string.Empty, string.Empty};
+    private readonly string[] _rawInputTexts = {string.Empty, string.Empty, string.Empty};
     public string RawInputText
     {
         get => _rawInputTexts[_slotNumber - 1];
