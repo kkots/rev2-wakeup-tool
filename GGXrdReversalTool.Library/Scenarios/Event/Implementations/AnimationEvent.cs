@@ -77,9 +77,6 @@ public class AnimationEvent : IScenarioEvent
     {
         return action.Inputs[slotNumber - 1].IsReversalValid && IsValid;
     }
-    public bool DependsOnReversalFrame()
-    {
-        return true;
-    }
+    public bool DependsOnReversalFrame() => true;
     
 }

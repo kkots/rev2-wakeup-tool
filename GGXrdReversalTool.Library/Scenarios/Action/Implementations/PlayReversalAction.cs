@@ -11,7 +11,7 @@ namespace GGXrdReversalTool.Library.Scenarios.Action.Implementations;
 public class PlayReversalAction : IScenarioAction
 {
     public IMemoryReader? MemoryReader { get; set; }
-    public SlotInput[] Inputs { get; set; } = null!;
+    public SlotInput[] Inputs { get; set; } = {};
     public bool IsRunning { get; private set; }
 
     public void Init(int slotNumber)

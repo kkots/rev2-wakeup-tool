@@ -31,9 +31,6 @@ public class ComboEvent : IScenarioEvent
     {
         return action.Inputs[slotNumber - 1].IsValid;
     }
-    public bool DependsOnReversalFrame()
-    {
-        return false;
-    }
+    public bool DependsOnReversalFrame() => false;
 
 }

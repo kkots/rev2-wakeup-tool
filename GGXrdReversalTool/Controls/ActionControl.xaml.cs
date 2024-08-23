@@ -17,16 +17,11 @@ public sealed partial class ActionControl
 {
     public ActionControl()
     {
-        _rawInputTexts = new string[3];
-        for (int i = 0; i < _rawInputTexts.Length; ++i)
-        {
-            _rawInputTexts[i] = string.Empty;
-        }
         InitializeComponent();
     }
     
 
-    private string[] _rawInputTexts;
+    private string[] _rawInputTexts = {string.Empty, string.Empty, string.Empty};
     public string RawInputText
     {
         get => _rawInputTexts[_slotNumber - 1];
@@ -240,11 +235,7 @@ public sealed partial class ActionControl
 
     private void CreateScenario()
     {
-        SlotInput[] inputs = new SlotInput[3];
-        for (int i = 0; i < inputs.Length; ++i)
-        {
-            inputs[i] = new SlotInput(_rawInputTexts[i]);
-        }
+        var inputs = _rawInputTexts.Select(rawInputText => new SlotInput(rawInputText)).ToArray();
         
         ScenarioAction = new PlayReversalAction
         {
