@@ -92,6 +92,21 @@ public class MemoryReader : IMemoryReader
             
         Write(_pointerCollection.Players[player].WhatCanDoFlagsPtr, (int)oldFlags);
     }
+    public int GetTimeUntilTech(int player)
+    {
+        if (player is < 0 or > 1)
+            return 0;
+            
+        return Read<int>(_pointerCollection.Players[player].TimeUntilTechPtr);
+    }
+    public bool GetTechRelatedFlag(int player)
+    {
+        if (player is < 0 or > 1)
+            return false;
+            
+        int flagValues = Read<int>(_pointerCollection.Players[player].TechRelatedFlagPtr);
+        return (flagValues & 0x4) != 0;
+    }
 
     public SlotInput ReadInputFromSlot(int slotNumber)
     {
@@ -324,6 +339,8 @@ public class MemoryReader : IMemoryReader
             public readonly MemoryPointer AnimFramePtr;
             public readonly MemoryPointer SlowdownFramesPtr;
             public readonly MemoryPointer WhatCanDoFlagsPtr;
+            public readonly MemoryPointer TimeUntilTechPtr;
+            public readonly MemoryPointer TechRelatedFlagPtr;
 
             public PlayerData(int matchPtrAddr, int index)
             {
@@ -339,6 +356,8 @@ public class MemoryReader : IMemoryReader
                 AnimFramePtr = new MemoryPointer(matchPtrAddr, playerOffset + 0x130); // 0x134? Both work for now
                 SlowdownFramesPtr = new MemoryPointer(matchPtrAddr, playerOffset + 0x261fc);
                 WhatCanDoFlagsPtr = new MemoryPointer(matchPtrAddr, playerOffset + 0x4d3c);  // Normally holds B001716E
+                TimeUntilTechPtr = new MemoryPointer(matchPtrAddr, playerOffset + 0x9808);
+                TechRelatedFlagPtr = new MemoryPointer(matchPtrAddr, playerOffset + 0x4d40);
             }
         };
         public ImmutableArray<PlayerData> Players { get; private set; }

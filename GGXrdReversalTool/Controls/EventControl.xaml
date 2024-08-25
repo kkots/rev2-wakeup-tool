@@ -64,7 +64,16 @@
         <DataTemplate x:Key="SimulatedRoundstartDataTemplate">
             <TextBlock TextWrapping="Wrap" Text="You recover from tapping Blitz Shield"/>
         </DataTemplate>
-        <local:EventControlDataTemplateSelector x:Key="EventControlDataTemplateSelector" ComboDataTemplate="{StaticResource ComboDataTemplate}" AnimationDataTemplate="{StaticResource AnimationDataTemplate}" SimulatedRoundstartDataTemplate="{StaticResource SimulatedRoundstartDataTemplate}" />
+        <DataTemplate x:Key="DelayAirRecoveryDataTemplate">
+            <TextBlock TextWrapping="Wrap">
+                Dummy becomes able to do air recovery.
+                <LineBreak/>Note that dummy becomes able to act on frame 10 of air recovery.
+                <LineBreak/>"!" character cannot be used in this mode.
+                <LineBreak/>
+                <LineBreak/>Example: 6*10,6H,6*8,6SH*3 (delay tech by 10f, do a 6SH throw OS)
+            </TextBlock>
+        </DataTemplate>
+        <local:EventControlDataTemplateSelector x:Key="EventControlDataTemplateSelector" ComboDataTemplate="{StaticResource ComboDataTemplate}" AnimationDataTemplate="{StaticResource AnimationDataTemplate}" SimulatedRoundstartDataTemplate="{StaticResource SimulatedRoundstartDataTemplate}" DelayAirRecoveryDataTemplate="{StaticResource DelayAirRecoveryDataTemplate}" />
     </local:NotifiedUserControl.Resources>
     <GroupBox Header="When">
         <Grid>
