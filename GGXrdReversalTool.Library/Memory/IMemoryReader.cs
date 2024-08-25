@@ -32,4 +32,6 @@ public interface IMemoryReader
     SlotInput ReadInputFromSlot(int slotNumber);
     void LockDummy(int player, out uint oldFlags);
     void UnlockDummy(int player, uint oldFlags);
+    int GetTimeUntilTech(int player);
+    bool GetTechRelatedFlag(int player);
 }

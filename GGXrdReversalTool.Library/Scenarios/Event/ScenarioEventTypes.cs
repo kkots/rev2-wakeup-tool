@@ -4,5 +4,6 @@ public enum ScenarioEventTypes
 {
     Combo,
     Animation,
-    SimulatedRoundstart
+    SimulatedRoundstart,
+    DelayAirRecovery
 }

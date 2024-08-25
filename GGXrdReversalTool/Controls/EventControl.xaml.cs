@@ -14,7 +14,12 @@ public sealed partial class EventControl
         InitializeComponent();
     }
 
-    public IEnumerable<object> ActionTypes => new string[]{"Animation", "Combo", "Simulated roundstart"};
+    public IEnumerable<object> ActionTypes => new string[]{
+        "Animation",
+        "Combo",
+        "Simulated roundstart",
+        "Delay air recovery"
+    };
 
     private string _selectedScenarioEventString = string.Empty;
     public string? SelectedScenarioEventString
@@ -36,6 +41,9 @@ public sealed partial class EventControl
                     break;
                 case "Simulated roundstart":
                     SelectedScenarioEvent = ScenarioEventTypes.SimulatedRoundstart;
+                    break;
+                case "Delay air recovery":
+                    SelectedScenarioEvent = ScenarioEventTypes.DelayAirRecovery;
                     break;
             }
             
@@ -190,6 +198,9 @@ public sealed partial class EventControl
             ScenarioEventTypes.SimulatedRoundstart => new SimulatedRoundstartEvent
             {
             },
+            ScenarioEventTypes.DelayAirRecovery => new DelayAirRecoveryEvent
+            {
+            },
             _ => null
             
         };
@@ -203,6 +214,7 @@ public class EventControlDataTemplateSelector : DataTemplateSelector
     public DataTemplate ComboDataTemplate { get; set; } = null!;
     public DataTemplate AnimationDataTemplate { get; set; } = null!;
     public DataTemplate SimulatedRoundstartDataTemplate { get; set; } = null!;
+    public DataTemplate DelayAirRecoveryDataTemplate { get; set; } = null!;
 
     public override DataTemplate SelectTemplate(object item, DependencyObject container)
     {
@@ -213,6 +225,7 @@ public class EventControlDataTemplateSelector : DataTemplateSelector
                 ScenarioEventTypes.Animation => AnimationDataTemplate,
                 ScenarioEventTypes.Combo => ComboDataTemplate,
                 ScenarioEventTypes.SimulatedRoundstart => SimulatedRoundstartDataTemplate,
+                ScenarioEventTypes.DelayAirRecovery => DelayAirRecoveryDataTemplate,
                 _ => new DataTemplate()
             };
         }
