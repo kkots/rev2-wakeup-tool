@@ -3,16 +3,28 @@ using GGXrdReversalTool.Library.Domain.Types;
 
 namespace GGXrdReversalTool.Library.Domain.Characters;
 
-public record Character 
+public interface ICharacter
+{
+    public static ICharacter Zero => NoCharacter.Value;
+}
+
+public class NoCharacter : ICharacter
+{
+    private NoCharacter() { }
+    public static NoCharacter Value => new();
+
+}
+
+public record Character : ICharacter 
 {
     public NonEmptyString CharName { get; }
-    public int FaceUpFrames { get; }
-    public int FaceDownFrames { get; }
+    public FrameCount FaceUpFrames { get; }
+    public FrameCount FaceDownFrames { get; }
 
-    public int WallSplatWakeupTiming => 15;
+    public FrameCount WallSplatWakeupTiming => new(15);
 
     private Character(string charName, int faceUpFrames, int faceDownFrames) =>
-        (CharName, FaceUpFrames, FaceDownFrames) = (charName, faceUpFrames, faceDownFrames);
+        (CharName, FaceUpFrames, FaceDownFrames) = (new NonEmptyString(charName), new FrameCount(faceUpFrames), new FrameCount(faceDownFrames));
      
 
     public static readonly Character Sol = new("Sol", 25, 21);
