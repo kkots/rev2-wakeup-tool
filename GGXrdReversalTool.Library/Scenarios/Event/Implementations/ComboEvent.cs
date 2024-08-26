@@ -1,4 +1,5 @@
 ﻿using GGXrdReversalTool.Library.Memory;
+using GGXrdReversalTool.Library.Scenarios.Action;
 
 namespace GGXrdReversalTool.Library.Scenarios.Event.Implementations;
 
@@ -26,5 +27,10 @@ public class ComboEvent : IScenarioEvent
 
         return result;
     }
+    public bool CanEnable(IScenarioAction action, int slotNumber)
+    {
+        return action.Inputs[slotNumber - 1].IsValid;
+    }
+    public bool DependsOnReversalFrame() => false;
 
 }

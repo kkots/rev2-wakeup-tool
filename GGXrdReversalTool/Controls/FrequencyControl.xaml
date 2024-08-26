@@ -12,10 +12,18 @@
         <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
-                <RowDefinition/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
-            <TextBlock TextWrapping="Wrap" Text="{Binding ElementName=Control, Path=Percentage, Converter={StaticResource PercentageFrequencyConverter}}"/>
-            <Slider Grid.Row="1" Value="{Binding ElementName=Control, Path=Percentage}" Minimum="0" Maximum="100" />
+            <TextBlock TextWrapping="Wrap" Text="{Binding ElementName=Control, Path=Percentage, Converter={StaticResource PercentageFrequencyConverter}}" Visibility="{Binding ElementName=Control, Path=PlayRandomSlot, Converter={StaticResource AntiVisibilityCollapsedConverter}}"/>
+            <Slider Grid.Row="1" Value="{Binding ElementName=Control, Path=Percentage}" Minimum="0" Maximum="100" Visibility="{Binding ElementName=Control, Path=PlayRandomSlot, Converter={StaticResource AntiVisibilityCollapsedConverter}}"/>
+            <CheckBox Content="Play a random slot" IsChecked="{Binding ElementName=Control, Path=PlayRandomSlot}" Margin="5" HorizontalAlignment="Left" Grid.Row="2" VerticalAlignment="Center"/>
+            <local:FrequencyRandomSlotControl Grid.Row="3" Visibility="{Binding ElementName=Control, Path=PlayRandomSlot, Converter={StaticResource VisibilityCollapsedConverter}}" SlotNumber="1" UseSlot="{Binding ElementName=Control, Path=UseSlot1, Mode=OneWayToSource}" SlotPercentage="{Binding ElementName=Control, Path=Slot1Percentage, Mode=TwoWay}"/>
+            <local:FrequencyRandomSlotControl Grid.Row="4" Visibility="{Binding ElementName=Control, Path=PlayRandomSlot, Converter={StaticResource VisibilityCollapsedConverter}}" SlotNumber="2" UseSlot="{Binding ElementName=Control, Path=UseSlot2, Mode=OneWayToSource}" SlotPercentage="{Binding ElementName=Control, Path=Slot2Percentage, Mode=TwoWay}"/>
+            <local:FrequencyRandomSlotControl Grid.Row="5" Visibility="{Binding ElementName=Control, Path=PlayRandomSlot, Converter={StaticResource VisibilityCollapsedConverter}}" SlotNumber="3" UseSlot="{Binding ElementName=Control, Path=UseSlot3, Mode=OneWayToSource}" SlotPercentage="{Binding ElementName=Control, Path=Slot3Percentage, Mode=TwoWay}"/>
         </Grid>
     </GroupBox>
 </local:NotifiedUserControl>

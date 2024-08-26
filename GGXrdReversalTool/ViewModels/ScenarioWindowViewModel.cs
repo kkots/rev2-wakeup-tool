@@ -206,7 +206,15 @@ public class ScenarioWindowViewModel : ViewModelBase
     private void Enable()
     {
         ScenarioAction!.SlotNumber = SlotNumber;
-        _scenario = new Scenario(_memoryReader, ScenarioEvent!, ScenarioAction, ScenarioFrequency!);
+        int[] usedSlots = ScenarioFrequency!.UsedSlotNumbers();
+        if (usedSlots.Length == 1 && usedSlots[0] == -1)
+        {
+            usedSlots[0] = _slotNumber;
+        }
+        _scenario = new Scenario(_memoryReader, ScenarioEvent!, ScenarioAction,
+            _slotNumber,
+            usedSlots,
+            ScenarioFrequency!);
         
         _scenario.Run();
         
@@ -235,14 +243,7 @@ public class ScenarioWindowViewModel : ViewModelBase
             return false;
         }
         
-        switch (ScenarioEvent)
-        {
-            case ComboEvent when ScenarioAction.Input.IsValid:
-            case AnimationEvent when ScenarioAction.Input.IsReversalValid && ScenarioEvent.IsValid:
-                return true;
-            default:
-                return false;
-        }
+        return ScenarioEvent.CanEnable(ScenarioAction);
     }
 
     #endregion

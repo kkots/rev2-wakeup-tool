@@ -15,6 +15,8 @@ public class Scenario : IDisposable
     private readonly IScenarioEvent _scenarioEvent;
     private readonly IScenarioAction _scenarioAction;
     private readonly IScenarioFrequency _scenarioFrequency;
+    private readonly int _selectedSlot;
+    private readonly int[] _usedSlots;
 
 
     private static bool _runThread;
@@ -25,14 +27,18 @@ public class Scenario : IDisposable
 
 
     public Scenario(
-        IMemoryReader memoryReader,
+        IMemoryReader memoryReader, 
         IScenarioEvent scenarioEvent, 
         IScenarioAction scenarioAction, 
+        int selectedSlot, 
+        int[] usedSlots, 
         IScenarioFrequency scenarioFrequency)
     {
         _memoryReader = memoryReader; 
         _scenarioEvent = scenarioEvent;
         _scenarioAction = scenarioAction;
+        _selectedSlot = selectedSlot;
+        _usedSlots = usedSlots;
         _scenarioFrequency = scenarioFrequency;
     }
 
@@ -44,8 +50,9 @@ public class Scenario : IDisposable
         _scenarioEvent.MemoryReader = _memoryReader;
         _scenarioAction.MemoryReader = _memoryReader;
         _scenarioFrequency.MemoryReader = _memoryReader;
+        
+        _scenarioAction.Init(_selectedSlot);
 
-        _scenarioAction.Init();
     }
 
     public void Run()
@@ -66,6 +73,21 @@ public class Scenario : IDisposable
 
             var engineTicks = _memoryReader.GetEngineTickCount();
             var prevEngineTicks = engineTicks;
+            int pickedSlot = -1;
+            bool mustIgnoreEvent = false;
+            int maxReversalFIndex = 0;
+            bool dependsOnReversalFrame = _scenarioEvent.DependsOnReversalFrame();
+            if (dependsOnReversalFrame)
+            {
+                foreach (int slotNumber in _usedSlots)
+                {
+                    int reversalFIndex = Math.Max(0, _scenarioAction.Inputs[slotNumber - 1].ReversalFrameIndex);
+                    if (reversalFIndex > maxReversalFIndex)
+                    {
+                        maxReversalFIndex = reversalFIndex;
+                    }
+                }
+            }
 
             timeBeginPeriod(1);
 
@@ -91,18 +113,55 @@ public class Scenario : IDisposable
                         }
                         // Only execute a reversal on the exact frame, skipping if we miss it
                         // Potentially configurable later, e.g. executing one frame early or on the exact frame if missed
-                        if (0 == _scenarioEvent.FramesUntilEvent(_scenarioAction.Input.ReversalFrameIndex))
+                        int framesUntilEvent = _scenarioEvent.FramesUntilEvent(0);
+                        
+                        if (framesUntilEvent == int.MaxValue)
+                        {
+                            pickedSlot = -1;
+                        }
+                        else if (0 == framesUntilEvent - maxReversalFIndex)
                         {
                             LogManager.Instance.WriteLine("Event Occured");
 
-                            var shouldExecuteAction = _scenarioFrequency.ShouldHappen();
-
-                            if (shouldExecuteAction)
+                            int slotNumber = 0;
+                            pickedSlot = -1;
+                            mustIgnoreEvent = !_scenarioFrequency.ShouldHappen(out slotNumber);
+                            
+                            if (!mustIgnoreEvent)
                             {
-                                _scenarioAction.Execute();
-
-                                LogManager.Instance.WriteLine("Action Executed");
+                                pickedSlot = slotNumber;
+                                if (pickedSlot == -1)
+                                {
+                                    pickedSlot = _selectedSlot;
+                                }
                             }
+                        }
+                        
+                        if (pickedSlot != -1
+                            && !mustIgnoreEvent
+                            && framesUntilEvent < int.MaxValue
+                            && (
+                                dependsOnReversalFrame
+                                && 0 == framesUntilEvent - Math.Max(0, _scenarioAction.Inputs[pickedSlot - 1].ReversalFrameIndex)
+                                || !dependsOnReversalFrame
+                                && 0 == framesUntilEvent))
+                        {
+                            bool actionValid = _scenarioEvent.CanEnable(_scenarioAction, pickedSlot);
+                            if (!actionValid)
+                            {
+                                _scenarioAction.Execute(pickedSlot);
+                            }
+                            else 
+                            {
+                                if (_usedSlots.Length > 1)
+                                {
+                                    _scenarioAction.Init(pickedSlot);
+                                }
+                                _scenarioAction.Execute();
+                            }
+                            pickedSlot = -1;
+
+                            LogManager.Instance.WriteLine("Action Executed");
                         }
                     }
                 }
@@ -117,7 +176,7 @@ public class Scenario : IDisposable
             }
 
             timeEndPeriod(1);
-
+            
             LogManager.Instance.WriteLine("Scenario Thread ended");
         });
 
