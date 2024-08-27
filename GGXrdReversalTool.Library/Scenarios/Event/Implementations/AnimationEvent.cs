@@ -39,8 +39,6 @@ public class AnimationEvent : IScenarioEvent
         var animFrame = MemoryReader.GetAnimFrame(dummySide);
         var blockstun = MemoryReader.GetBlockstun(dummySide);
         var hitstop = MemoryReader.GetHitstop(dummySide);
-        var freezeFrames = MemoryReader.GetSuperflashFreezeFrames(dummySide);
-        var slowdownFrames = MemoryReader.GetSlowdownFrames(playerSide);
         var lastBlockstun = _lastBlockstun;
         _lastBlockstun = blockstun;
 
@@ -58,19 +56,8 @@ public class AnimationEvent : IScenarioEvent
         if (result == int.MaxValue && ShouldCheckBlockstunEnding && blockstun > 0)
             result = blockstun + hitstop - 1;
 
-        if (result >= int.MaxValue) return result;
-        
-        result += Math.Min(result, (slowdownFrames / 2) + slowdownFrames % 2);
-        result -= inputReversalFrame;
-
-        if (freezeFrames <= 0) return result;
-        
-        // Avoid trying a reversal directly out of a super freeze, where everything but blocking and throwing gets dropped
-        if (result + freezeFrames == 0)
-            result = int.MaxValue;
-        else
-            result += freezeFrames;
-
+        IScenarioEvent thisButEvent = this;
+        result = thisButEvent.ApplySuperFreezeSlowdown(result, dummySide, playerSide, inputReversalFrame);
         return result;
     }
     public bool CanEnable(IScenarioAction action, int slotNumber)

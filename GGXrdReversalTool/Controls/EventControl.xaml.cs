@@ -97,6 +97,49 @@ public sealed partial class EventControl
             CreateScenario();
         }
     }
+
+    private int _minDelayAirRecoveryDelay = 5;
+    public int MinDelayAirRecoveryDelay
+    {
+        get => _minDelayAirRecoveryDelay;
+        set
+        {
+            var coercedValue = Math.Clamp(value, 0, MaxDelayAirRecoveryDelay);
+            if (coercedValue == _minDelayAirRecoveryDelay) return;
+            _minDelayAirRecoveryDelay = coercedValue;
+            OnPropertyChanged();
+            CreateScenario();
+        }
+    }
+
+    
+    private int _maxDelayAirRecoveryDelay = 20;
+    public int MaxDelayAirRecoveryDelay
+    {
+        get => _maxDelayAirRecoveryDelay;
+        set
+        {
+            var coercedValue = Math.Max(value, MinDelayAirRecoveryDelay);
+            if (coercedValue == _maxDelayAirRecoveryDelay) return;
+            _maxDelayAirRecoveryDelay = coercedValue;
+            OnPropertyChanged();
+            CreateScenario();
+        }
+    }
+
+    public IEnumerable<AirRecoveryTypes> AirRecoveryTypesList => Enum.GetValues<AirRecoveryTypes>();
+    public AirRecoveryTypes _selectedAirRecoveryType = AirRecoveryTypes.Forward;
+    public AirRecoveryTypes SelectedAirRecoveryType
+    {
+        get => _selectedAirRecoveryType;
+        set
+        {
+            if (value == _selectedAirRecoveryType) return;
+            _selectedAirRecoveryType = value;
+            OnPropertyChanged();
+            CreateScenario();
+        }
+    }
     
 
     private bool _shouldCheckWakingUp = true;
@@ -200,6 +243,9 @@ public sealed partial class EventControl
             },
             ScenarioEventTypes.DelayAirRecovery => new DelayAirRecoveryEvent
             {
+                MinDelay = MinDelayAirRecoveryDelay,
+                MaxDelay = MaxDelayAirRecoveryDelay,
+                AirRecoveryType = SelectedAirRecoveryType
             },
             _ => null
             
