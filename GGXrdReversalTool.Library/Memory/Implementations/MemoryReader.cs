@@ -44,6 +44,11 @@ public class MemoryReader : IMemoryReader
         return result;
     }
 
+    public bool StopDummyPlayback()
+    {
+        return Write(_pointerCollection.DummyModePtr, 0);
+    }
+
     public bool SetDummyRecordingSlot(int slotNumber)
     {
         if (slotNumber is < 1 or > 3)
@@ -106,6 +111,14 @@ public class MemoryReader : IMemoryReader
             
         int flagValues = Read<int>(_pointerCollection.Players[player].TechRelatedFlagPtr);
         return (flagValues & 0x4) != 0;
+    }
+    public int GetAirRecoverySetting()
+    {
+        return Read<int>(_pointerCollection.AirRecoverySettingPtr);
+    }
+    public bool WriteAirRecoverySetting(int setting)
+    {
+        return Write(_pointerCollection.AirRecoverySettingPtr, setting);
     }
 
     public SlotInput ReadInputFromSlot(int slotNumber)
@@ -212,6 +225,11 @@ public class MemoryReader : IMemoryReader
     {
         // Actually a 64-bit counter but it takes 28 months of continuous runtime to overflow into the high dword
         return Read<uint>(_pointerCollection.EngineTickCountPtr);
+    }
+
+    public uint GetAswEngineTickCount()
+    {
+        return Read<uint>(_pointerCollection.AswEngineTickCountPtr);
     }
 
 
@@ -374,6 +392,8 @@ public class MemoryReader : IMemoryReader
         public MemoryPointer SuperflashFramesForOpponentPtr { get; private set; } = null!;
         public MemoryPointer WorldInTickPtr { get; private set; } = null!;
         public MemoryPointer EngineTickCountPtr { get; private set; } = null!;
+        public MemoryPointer AswEngineTickCountPtr { get; private set; } = null!;
+        public MemoryPointer AirRecoverySettingPtr { get; private set; } = null!;
 
         private readonly Process _process;
         private readonly MemoryReader _memoryReader;
@@ -438,6 +458,11 @@ public class MemoryReader : IMemoryReader
             // Global 64 bit tick counter for the main loop incremented shortly after ticking everything
             const string engineTickCountPattern = "dQWD+AV2FPIPEEcQ";
             EngineTickCountPtr = new MemoryPointer(_memoryReader.Read<int>(textAddr - 4 + FindPatternOffset(text, engineTickCountPattern)));
+            
+            AswEngineTickCountPtr = new MemoryPointer(matchPtrAddr, 0x1c6f70);
+
+            const string airRecoverySettingPattern = "i0wkBIPB7jPAg/kVD4e0AAAA";
+            AirRecoverySettingPtr = new MemoryPointer(_memoryReader.Read<int>(textAddr + 0x9A + FindPatternOffset(text, airRecoverySettingPattern)));
         }
 
         private int FindPatternOffset(in byte[] haystack, in byte[] needle)

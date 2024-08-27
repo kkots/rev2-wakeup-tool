@@ -64,14 +64,37 @@
         <DataTemplate x:Key="SimulatedRoundstartDataTemplate">
             <TextBlock TextWrapping="Wrap" Text="You recover from tapping Blitz Shield"/>
         </DataTemplate>
+        <converters:DelayAirRecoveryEventConverter x:Key="DelayAirRecoveryEventConverter" />
         <DataTemplate x:Key="DelayAirRecoveryDataTemplate">
-            <TextBlock TextWrapping="Wrap">
-                Dummy becomes able to do air recovery.
-                <LineBreak/>Note that dummy becomes able to act on frame 10 of air recovery.
-                <LineBreak/>"!" character cannot be used in this mode.
-                <LineBreak/>
-                <LineBreak/>Example: 6*10,6H,6*8,6SH*3 (delay tech by 10f, do a 6SH throw OS)
-            </TextBlock>
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition/>
+                    <RowDefinition/>
+                    <RowDefinition/>
+                    <RowDefinition/>
+                </Grid.RowDefinitions>
+                <TextBlock TextWrapping="Wrap">
+                    <TextBlock.Text>
+                        <MultiBinding Converter="{StaticResource DelayAirRecoveryEventConverter}">
+                            <Binding Path="MinDelayAirRecoveryDelay" ElementName="Control"/>
+                            <Binding Path="MaxDelayAirRecoveryDelay" ElementName="Control"/>
+                        </MultiBinding>
+                    </TextBlock.Text>
+                </TextBlock>
+                <Slider Grid.Row="1" Value="{Binding ElementName=Control, Path=MinDelayAirRecoveryDelay}" Minimum="0" Maximum="{Binding ElementName=Control, Path=MaxDelayAirRecoveryDelay}"/>
+                <Slider Grid.Row="2" Value="{Binding ElementName=Control, Path=MaxDelayAirRecoveryDelay}" Minimum="{Binding ElementName=Control, Path=MinDelayAirRecoveryDelay}" Maximum="100"/>
+                <Grid Grid.Row="3">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    <TextBlock TextWrapping="Wrap" Text="Tech direction:" VerticalAlignment="Center"/>
+                    <ComboBox Grid.Column="1" Margin="5,5,0,5" ItemsSource="{Binding ElementName=Control, Path=AirRecoveryTypesList}" SelectedValue="{Binding ElementName=Control, Path=SelectedAirRecoveryType}" VerticalAlignment="Center"/>
+                </Grid>
+            </Grid>
         </DataTemplate>
         <local:EventControlDataTemplateSelector x:Key="EventControlDataTemplateSelector" ComboDataTemplate="{StaticResource ComboDataTemplate}" AnimationDataTemplate="{StaticResource AnimationDataTemplate}" SimulatedRoundstartDataTemplate="{StaticResource SimulatedRoundstartDataTemplate}" DelayAirRecoveryDataTemplate="{StaticResource DelayAirRecoveryDataTemplate}" />
     </local:NotifiedUserControl.Resources>
