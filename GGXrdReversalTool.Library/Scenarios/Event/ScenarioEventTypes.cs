@@ -3,5 +3,6 @@
 public enum ScenarioEventTypes
 {
     Combo,
-    Animation
+    Animation,
+    SimulatedRoundstart
 }
