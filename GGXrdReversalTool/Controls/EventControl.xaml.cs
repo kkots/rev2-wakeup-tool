@@ -14,44 +14,7 @@ public sealed partial class EventControl
         InitializeComponent();
     }
 
-    public IEnumerable<object> ActionTypes => new string[]{
-        "Animation",
-        "Combo",
-        "Simulated roundstart",
-        "Delay air recovery"
-    };
-
-    private string _selectedScenarioEventString = string.Empty;
-    public string? SelectedScenarioEventString
-    {
-        get => _selectedScenarioEventString;
-        set
-        {
-            if (value == _selectedScenarioEventString) return;
-            
-            _selectedScenarioEventString = value;
-            
-            switch (_selectedScenarioEventString)
-            {
-                case "Animation":
-                    SelectedScenarioEvent = ScenarioEventTypes.Animation;
-                    break;
-                case "Combo":
-                    SelectedScenarioEvent = ScenarioEventTypes.Combo;
-                    break;
-                case "Simulated roundstart":
-                    SelectedScenarioEvent = ScenarioEventTypes.SimulatedRoundstart;
-                    break;
-                case "Delay air recovery":
-                    SelectedScenarioEvent = ScenarioEventTypes.DelayAirRecovery;
-                    break;
-            }
-            
-            OnPropertyChanged();
-            
-            CreateScenario();
-        }
-    }
+    public IEnumerable<ScenarioEventTypes> ActionTypes => Enum.GetValues<ScenarioEventTypes>();
 
     private ScenarioEventTypes? _selectedScenarioEvent;
     public ScenarioEventTypes? SelectedScenarioEvent

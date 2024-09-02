@@ -5,10 +5,10 @@ namespace GGXrdReversalTool.Library.Scenarios.Event.Implementations;
 
 public class DelayAirRecoveryEvent : IScenarioEvent
 {
-    public int oldAirRecoverySetting = -1;
-    public int MaxDelay;
-    public int MinDelay;
-    public AirRecoveryTypes AirRecoveryType;
+    private int _oldAirRecoverySetting = -1;
+    public int MaxDelay { get; set; } = 20;
+    public int MinDelay { get; set; } = 5;
+    public AirRecoveryTypes AirRecoveryType { get; set; } = AirRecoveryTypes.Neutral;
     private readonly Random _random = new();
     private const string TechAnimation = "CmnActUkemi";
     private const int TechDuration = 9;
@@ -81,7 +81,7 @@ public class DelayAirRecoveryEvent : IScenarioEvent
         if (MemoryReader == null)
             return;
         
-        oldAirRecoverySetting = MemoryReader.GetAirRecoverySetting();
+        _oldAirRecoverySetting = MemoryReader.GetAirRecoverySetting();
         MemoryReader.WriteAirRecoverySetting(0);
         _recoveryEnabled = false;
     }
@@ -90,9 +90,9 @@ public class DelayAirRecoveryEvent : IScenarioEvent
         if (MemoryReader == null)
             return;
         
-        if (oldAirRecoverySetting != -1)
+        if (_oldAirRecoverySetting != -1)
         {
-            MemoryReader.WriteAirRecoverySetting(oldAirRecoverySetting);
+            MemoryReader.WriteAirRecoverySetting(_oldAirRecoverySetting);
         }
     }
 

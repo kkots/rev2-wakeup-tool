@@ -44,10 +44,7 @@ public class MemoryReader : IMemoryReader
         return result;
     }
 
-    public bool StopDummyPlayback()
-    {
-        return Write(_pointerCollection.DummyModePtr, 0);
-    }
+    public bool StopDummyPlayback() => Write(_pointerCollection.DummyModePtr, 0);
 
     public bool SetDummyRecordingSlot(int slotNumber)
     {
@@ -97,13 +94,10 @@ public class MemoryReader : IMemoryReader
             
         Write(_pointerCollection.Players[player].WhatCanDoFlagsPtr, (int)oldFlags);
     }
-    public int GetTimeUntilTech(int player)
-    {
-        if (player is < 0 or > 1)
-            return 0;
-            
-        return Read<int>(_pointerCollection.Players[player].TimeUntilTechPtr);
-    }
+    public int GetTimeUntilTech(int player) =>
+    	player is < 0 or > 1
+    	? 0
+    	: Read<int>(_pointerCollection.Players[player].TimeUntilTechPtr);
     public bool GetTechRelatedFlag(int player)
     {
         if (player is < 0 or > 1)
@@ -112,15 +106,8 @@ public class MemoryReader : IMemoryReader
         int flagValues = Read<int>(_pointerCollection.Players[player].TechRelatedFlagPtr);
         return (flagValues & 0x4) != 0;
     }
-    public int GetAirRecoverySetting()
-    {
-        return Read<int>(_pointerCollection.AirRecoverySettingPtr);
-    }
-    public bool WriteAirRecoverySetting(int setting)
-    {
-        return Write(_pointerCollection.AirRecoverySettingPtr, setting);
-    }
-
+    public int GetAirRecoverySetting() => Read<int>(_pointerCollection.AirRecoverySettingPtr);
+    public bool WriteAirRecoverySetting(int setting) => Write(_pointerCollection.AirRecoverySettingPtr, setting);
     public SlotInput ReadInputFromSlot(int slotNumber)
     {
         if (slotNumber is < 1 or > 3)
@@ -227,10 +214,7 @@ public class MemoryReader : IMemoryReader
         return Read<uint>(_pointerCollection.EngineTickCountPtr);
     }
 
-    public uint GetAswEngineTickCount()
-    {
-        return Read<uint>(_pointerCollection.AswEngineTickCountPtr);
-    }
+    public uint GetAswEngineTickCount() => Read<uint>(_pointerCollection.AswEngineTickCountPtr);
 
 
     #region DLL Imports

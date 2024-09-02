@@ -19,8 +19,6 @@ public class DelayAirRecoveryEventConverter : IMultiValueConverter
     {
         throw new NotImplementedException();
     }
-    private string selectPlural(int count, string singular, string plural) {
-        if (count == 1) return singular;
-        return plural;
-    }
+    private string selectPlural(int count, string singular, string plural) =>
+        count == 1 ? singular : plural;
 }
