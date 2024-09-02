@@ -132,7 +132,7 @@ public class Scenario : IDisposable
                 }
                 // Only execute a reversal on the exact frame, skipping if we miss it
                 // Potentially configurable later, e.g. executing one frame early or on the exact frame if missed
-                int framesUntilEvent = _scenarioEvent.FramesUntilEvent(0);
+                int framesUntilEvent = _scenarioEvent.FramesUntilEvent(0, _memoryReader.IsUserControllingDummy());
                 
                 if (framesUntilEvent == int.MaxValue)
                 {

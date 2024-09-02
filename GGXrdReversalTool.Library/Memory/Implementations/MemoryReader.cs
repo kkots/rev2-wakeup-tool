@@ -218,6 +218,14 @@ public class MemoryReader : IMemoryReader
     {
         return Read<byte>(_pointerCollection.PlayerSidePtr) != 0 ? 1 : 0;
     }
+    public bool IsUserControllingDummy()
+    {
+        int dummyMode = Read<int>(_pointerCollection.DummyModePtr);
+        return dummyMode == 1  // CONTROLLING
+                || dummyMode == 2  // RECORDING
+                || dummyMode == 4  // "Press Enter/Start on the controller you wish to use."
+                || dummyMode == 5; // CONTROLLER
+    }
 
     public bool IsTrainingMode()
     {

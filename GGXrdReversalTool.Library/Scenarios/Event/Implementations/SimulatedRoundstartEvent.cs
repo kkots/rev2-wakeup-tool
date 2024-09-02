@@ -8,9 +8,9 @@ public class SimulatedRoundstartEvent : IScenarioEvent
     public IMemoryReader? MemoryReader { get; set; }
     public bool IsValid => true;
 
-    public int FramesUntilEvent(int inputReversalFrame)
+    public int FramesUntilEvent(int inputReversalFrame, bool isUserControllingDummy)
     {
-        if (MemoryReader is null)
+        if (MemoryReader is null || isUserControllingDummy)
             return int.MaxValue;
 
         var playerSide = MemoryReader.GetPlayerSide();

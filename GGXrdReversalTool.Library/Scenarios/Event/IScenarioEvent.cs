@@ -7,7 +7,7 @@ public interface IScenarioEvent
 {
     IMemoryReader? MemoryReader { get; internal set; }
     bool IsValid { get; }
-    int FramesUntilEvent(int inputReversalFrame);
+    int FramesUntilEvent(int inputReversalFrame, bool isUserControllingDummy);
     bool CanEnable(IScenarioAction action, int slotNumber);
     bool CanEnable(IScenarioAction action) => CanEnable(action, action.SlotNumber);
     bool DependsOnReversalFrame();
