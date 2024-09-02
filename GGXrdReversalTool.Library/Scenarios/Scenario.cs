@@ -104,7 +104,7 @@ public class Scenario : IDisposable
                 {
                     localRunThread = _runThread;
                 }
-
+                
                 // Approximately synchronise with the game's main loop finishing game state updates
                 // In practice this leaves >13ms for our work before the next tick
                 prevEngineTicks = engineTicks;
@@ -180,7 +180,7 @@ public class Scenario : IDisposable
                     bool actionValid = _scenarioEvent.CanEnable(_scenarioAction, pickedSlot);
                     if (!actionValid)
                     {
-                        _scenarioAction.Execute(pickedSlot);
+                        _scenarioAction.Execute(pickedSlot, pickedSlot);
                     }
                     else 
                     {
@@ -196,7 +196,7 @@ public class Scenario : IDisposable
                             dummyLocked = true;
                             _memoryReader.LockDummy(1 - _memoryReader.GetPlayerSide(), out oldWhatCanDoFlags);
                         }
-                        _scenarioAction.Execute();
+                        _scenarioAction.Execute(_scenarioAction.SlotNumber, pickedSlot);
                     }
                     pickedSlot = -1;
 

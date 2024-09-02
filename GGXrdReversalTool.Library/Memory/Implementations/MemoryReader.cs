@@ -108,6 +108,27 @@ public class MemoryReader : IMemoryReader
     }
     public int GetAirRecoverySetting() => Read<int>(_pointerCollection.AirRecoverySettingPtr);
     public bool WriteAirRecoverySetting(int setting) => Write(_pointerCollection.AirRecoverySettingPtr, setting);
+    public bool GuaranteeChargeInput(int player)
+    {
+        var data = _pointerCollection.InputRingBuffers[player];
+        ushort curIndex = Read<ushort>(data.IndexPtr);
+        MemoryPointer framesHeldBase = data.FramesHeldBasePtr;
+        ushort curFramesHeld = Read<ushort>(framesHeldBase.OffsetBy(curIndex * 2));
+        bool result = true;
+        if (curFramesHeld < 45)
+        {
+            result = result && Write(framesHeldBase.OffsetBy(curIndex * 2), 45);
+        }
+        MemoryPointer inputsBase = data.InputsBasePtr;
+        ushort input = 0xA;  // down-forward (in the unmirrored world direction coordinate system)
+        if (GetFacing(player) == 0)
+        {
+            input = 0x6;  // down-back
+        }
+        result = result && Write(inputsBase.OffsetBy(curIndex * 2), input);
+        return result;
+    }
+
     public SlotInput ReadInputFromSlot(int slotNumber)
     {
         if (slotNumber is < 1 or > 3)
@@ -362,7 +383,29 @@ public class MemoryReader : IMemoryReader
                 TechRelatedFlagPtr = new MemoryPointer(matchPtrAddr, playerOffset + 0x4d40);
             }
         };
+        public class InputRingBufferData
+        {
+            public readonly MemoryPointer BasePtr;
+            public readonly MemoryPointer LastInputPtr;
+            public readonly MemoryPointer CurrentInputPtr;
+            public readonly MemoryPointer InputsBasePtr;
+            public readonly MemoryPointer FramesHeldBasePtr;
+            public readonly MemoryPointer IndexPtr;
+
+            public InputRingBufferData(int matchPtrAddr, int index)
+            {
+                int baseOffset = 0x1c6d38 + index * 0x7e;
+
+                BasePtr = new MemoryPointer(matchPtrAddr, baseOffset);
+                LastInputPtr = BasePtr;  // ushort lastinput
+                CurrentInputPtr = new MemoryPointer(matchPtrAddr, baseOffset + 0x2);  // ushort curinput
+                InputsBasePtr = new MemoryPointer(matchPtrAddr, baseOffset + 0x4);  // ushort inputs[30]
+                FramesHeldBasePtr = new MemoryPointer(matchPtrAddr, baseOffset + 0x40);  // ushort framesheld[30]
+                IndexPtr = new MemoryPointer(matchPtrAddr, baseOffset + 0x7c); // ushort index
+            }
+        };
         public ImmutableArray<PlayerData> Players { get; private set; }
+        public ImmutableArray<InputRingBufferData> InputRingBuffers { get; private set; }
         public MemoryPointer FrameCountPtr { get; private set; } = null!;
         public MemoryPointer RecordingSlotPtr { get; private set; } = null!;
         public MemoryPointer PlayerSidePtr { get; private set; } = null!;
@@ -447,6 +490,10 @@ public class MemoryReader : IMemoryReader
 
             const string airRecoverySettingPattern = "i0wkBIPB7jPAg/kVD4e0AAAA";
             AirRecoverySettingPtr = new MemoryPointer(_memoryReader.Read<int>(textAddr + 0x9A + FindPatternOffset(text, airRecoverySettingPattern)));
+            
+            InputRingBuffers = ImmutableArray.Create(
+                new InputRingBufferData(matchPtrAddr, 0),
+                new InputRingBufferData(matchPtrAddr, 1));
         }
 
         private int FindPatternOffset(in byte[] haystack, in byte[] needle)

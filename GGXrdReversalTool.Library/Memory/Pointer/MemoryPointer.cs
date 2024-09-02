@@ -21,6 +21,15 @@ public class MemoryPointer
         Pointer = pointer;
         Offsets = offsets;
     }
+    
+    public MemoryPointer OffsetBy(int offset)
+    {
+        var newOffsets = new List<int>(Offsets.SkipLast(1))
+        {
+            Offsets.Last() + offset
+        };
+        return new MemoryPointer(Pointer, newOffsets);
+    }
 
     public static MemoryPointer FromConfigName(string configName, IntPtr baseAddress)
     {

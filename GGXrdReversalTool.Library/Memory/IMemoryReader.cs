@@ -38,4 +38,5 @@ public interface IMemoryReader
     bool GetTechRelatedFlag(int player);
     int GetAirRecoverySetting();
     bool WriteAirRecoverySetting(int setting);
+    bool GuaranteeChargeInput(int player);
 }
