@@ -64,7 +64,40 @@
         <DataTemplate x:Key="SimulatedRoundstartDataTemplate">
             <TextBlock TextWrapping="Wrap" Text="You recover from tapping Blitz Shield"/>
         </DataTemplate>
-        <local:EventControlDataTemplateSelector x:Key="EventControlDataTemplateSelector" ComboDataTemplate="{StaticResource ComboDataTemplate}" AnimationDataTemplate="{StaticResource AnimationDataTemplate}" SimulatedRoundstartDataTemplate="{StaticResource SimulatedRoundstartDataTemplate}" />
+        <converters:DelayAirRecoveryEventConverter x:Key="DelayAirRecoveryEventConverter" />
+        <DataTemplate x:Key="DelayAirRecoveryDataTemplate">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition/>
+                    <RowDefinition/>
+                    <RowDefinition/>
+                    <RowDefinition/>
+                </Grid.RowDefinitions>
+                <TextBlock TextWrapping="Wrap">
+                    <TextBlock.Text>
+                        <MultiBinding Converter="{StaticResource DelayAirRecoveryEventConverter}">
+                            <Binding Path="MinDelayAirRecoveryDelay" ElementName="Control"/>
+                            <Binding Path="MaxDelayAirRecoveryDelay" ElementName="Control"/>
+                        </MultiBinding>
+                    </TextBlock.Text>
+                </TextBlock>
+                <Slider Grid.Row="1" Value="{Binding ElementName=Control, Path=MinDelayAirRecoveryDelay}" Minimum="0" Maximum="{Binding ElementName=Control, Path=MaxDelayAirRecoveryDelay}"/>
+                <Slider Grid.Row="2" Value="{Binding ElementName=Control, Path=MaxDelayAirRecoveryDelay}" Minimum="{Binding ElementName=Control, Path=MinDelayAirRecoveryDelay}" Maximum="100"/>
+                <Grid Grid.Row="3">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    <TextBlock TextWrapping="Wrap" Text="Tech direction:" VerticalAlignment="Center"/>
+                    <ComboBox Grid.Column="1" Margin="5,5,0,5" ItemsSource="{Binding ElementName=Control, Path=AirRecoveryTypesList}" SelectedValue="{Binding ElementName=Control, Path=SelectedAirRecoveryType}" VerticalAlignment="Center"/>
+                </Grid>
+            </Grid>
+        </DataTemplate>
+        <local:EventControlDataTemplateSelector x:Key="EventControlDataTemplateSelector" ComboDataTemplate="{StaticResource ComboDataTemplate}" AnimationDataTemplate="{StaticResource AnimationDataTemplate}" SimulatedRoundstartDataTemplate="{StaticResource SimulatedRoundstartDataTemplate}" DelayAirRecoveryDataTemplate="{StaticResource DelayAirRecoveryDataTemplate}" />
+        <converters:ScenarioEventTypeToStringConverter x:Key="ScenarioEventTypeToStringConverter" />
     </local:NotifiedUserControl.Resources>
     <GroupBox Header="When">
         <Grid>
@@ -72,7 +105,7 @@
                 <RowDefinition Height="Auto"/>
                 <RowDefinition/>
             </Grid.RowDefinitions>
-            <ComboBox ItemsSource="{Binding ElementName=Control, Path=ActionTypes}" SelectedValue="{Binding ElementName=Control, Path=SelectedScenarioEventString}" VerticalAlignment="Center" Margin="0,5,0,5"/>
+            <ComboBox ItemsSource="{Binding ElementName=Control, Path=ActionTypes, Converter={StaticResource ScenarioEventTypeToStringConverter}}" SelectedValue="{Binding ElementName=Control, Path=SelectedScenarioEvent, Converter={StaticResource ScenarioEventTypeToStringConverter}}" VerticalAlignment="Center" Margin="0,5,0,5"/>
             <ContentControl Grid.Row="1" Content="{Binding ElementName=Control, Path=SelectedScenarioEvent}" ContentTemplateSelector="{StaticResource EventControlDataTemplateSelector}"/>
         </Grid>
         

@@ -12,6 +12,7 @@ public interface IMemoryReader
     int FrameCount();
     Character GetCurrentDummy();
     bool SetDummyPlayback(int slotNumber, int inputIndex, int startingSide);
+    bool StopDummyPlayback();
     bool SetDummyRecordingSlot(int slotNumber);
     int GetDummyMode();
     int GetTrainingRecordingSlot();
@@ -27,9 +28,14 @@ public interface IMemoryReader
     bool IsTrainingMode();
     public bool IsWorldInTick();
     public uint GetEngineTickCount();
+    public uint GetAswEngineTickCount();
 
     Process Process { get; }
     SlotInput ReadInputFromSlot(int slotNumber);
     void LockDummy(int player, out uint oldFlags);
     void UnlockDummy(int player, uint oldFlags);
+    int GetTimeUntilTech(int player);
+    bool GetTechRelatedFlag(int player);
+    int GetAirRecoverySetting();
+    bool WriteAirRecoverySetting(int setting);
 }

@@ -14,36 +14,7 @@ public sealed partial class EventControl
         InitializeComponent();
     }
 
-    public IEnumerable<object> ActionTypes => new string[]{"Animation", "Combo", "Simulated roundstart"};
-
-    private string _selectedScenarioEventString = string.Empty;
-    public string? SelectedScenarioEventString
-    {
-        get => _selectedScenarioEventString;
-        set
-        {
-            if (value == _selectedScenarioEventString) return;
-            
-            _selectedScenarioEventString = value;
-            
-            switch (_selectedScenarioEventString)
-            {
-                case "Animation":
-                    SelectedScenarioEvent = ScenarioEventTypes.Animation;
-                    break;
-                case "Combo":
-                    SelectedScenarioEvent = ScenarioEventTypes.Combo;
-                    break;
-                case "Simulated roundstart":
-                    SelectedScenarioEvent = ScenarioEventTypes.SimulatedRoundstart;
-                    break;
-            }
-            
-            OnPropertyChanged();
-            
-            CreateScenario();
-        }
-    }
+    public IEnumerable<ScenarioEventTypes> ActionTypes => Enum.GetValues<ScenarioEventTypes>();
 
     private ScenarioEventTypes? _selectedScenarioEvent;
     public ScenarioEventTypes? SelectedScenarioEvent
@@ -85,6 +56,49 @@ public sealed partial class EventControl
             var coercedValue = Math.Max(value, MinComboCount);
             if (coercedValue == _maxComboCount) return;
             _maxComboCount = coercedValue;
+            OnPropertyChanged();
+            CreateScenario();
+        }
+    }
+
+    private int _minDelayAirRecoveryDelay = 5;
+    public int MinDelayAirRecoveryDelay
+    {
+        get => _minDelayAirRecoveryDelay;
+        set
+        {
+            var coercedValue = Math.Clamp(value, 0, MaxDelayAirRecoveryDelay);
+            if (coercedValue == _minDelayAirRecoveryDelay) return;
+            _minDelayAirRecoveryDelay = coercedValue;
+            OnPropertyChanged();
+            CreateScenario();
+        }
+    }
+
+    
+    private int _maxDelayAirRecoveryDelay = 20;
+    public int MaxDelayAirRecoveryDelay
+    {
+        get => _maxDelayAirRecoveryDelay;
+        set
+        {
+            var coercedValue = Math.Max(value, MinDelayAirRecoveryDelay);
+            if (coercedValue == _maxDelayAirRecoveryDelay) return;
+            _maxDelayAirRecoveryDelay = coercedValue;
+            OnPropertyChanged();
+            CreateScenario();
+        }
+    }
+
+    public IEnumerable<AirRecoveryTypes> AirRecoveryTypesList => Enum.GetValues<AirRecoveryTypes>();
+    public AirRecoveryTypes _selectedAirRecoveryType = AirRecoveryTypes.Forward;
+    public AirRecoveryTypes SelectedAirRecoveryType
+    {
+        get => _selectedAirRecoveryType;
+        set
+        {
+            if (value == _selectedAirRecoveryType) return;
+            _selectedAirRecoveryType = value;
             OnPropertyChanged();
             CreateScenario();
         }
@@ -190,6 +204,12 @@ public sealed partial class EventControl
             ScenarioEventTypes.SimulatedRoundstart => new SimulatedRoundstartEvent
             {
             },
+            ScenarioEventTypes.DelayAirRecovery => new DelayAirRecoveryEvent
+            {
+                MinDelay = MinDelayAirRecoveryDelay,
+                MaxDelay = MaxDelayAirRecoveryDelay,
+                AirRecoveryType = SelectedAirRecoveryType
+            },
             _ => null
             
         };
@@ -203,6 +223,7 @@ public class EventControlDataTemplateSelector : DataTemplateSelector
     public DataTemplate ComboDataTemplate { get; set; } = null!;
     public DataTemplate AnimationDataTemplate { get; set; } = null!;
     public DataTemplate SimulatedRoundstartDataTemplate { get; set; } = null!;
+    public DataTemplate DelayAirRecoveryDataTemplate { get; set; } = null!;
 
     public override DataTemplate SelectTemplate(object item, DependencyObject container)
     {
@@ -213,6 +234,7 @@ public class EventControlDataTemplateSelector : DataTemplateSelector
                 ScenarioEventTypes.Animation => AnimationDataTemplate,
                 ScenarioEventTypes.Combo => ComboDataTemplate,
                 ScenarioEventTypes.SimulatedRoundstart => SimulatedRoundstartDataTemplate,
+                ScenarioEventTypes.DelayAirRecovery => DelayAirRecoveryDataTemplate,
                 _ => new DataTemplate()
             };
         }
