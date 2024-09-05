@@ -6,8 +6,8 @@ namespace GGXrdReversalTool.Library.Scenarios.Action;
 
 public interface IScenarioAction
 {
-    void Execute(int slotNumber);
-    void Execute() => Execute(SlotNumber);
+    void Execute(int slotNumberGame, int slotNumberTool);
+    void Execute() => Execute(SlotNumber, SlotNumber);
     void Tick();
     IMemoryReader? MemoryReader { get; internal set; }
     bool IsRunning { get; }
@@ -16,4 +16,5 @@ public interface IScenarioAction
     void Init(int inputIndex);
     
     int SlotNumber { get; set; }
+    bool[] GuaranteeChargeInputArray { get; set; }
 }

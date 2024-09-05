@@ -14,6 +14,7 @@
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
             <TextBlock TextWrapping="Wrap" Text="Action to perform :" Margin="0,5"/>
@@ -41,8 +42,21 @@
                 </Grid>
                 <local:PresetMenu Grid.Column="1" Margin="0,5" InsertPresetInputCommand="{Binding ElementName=Control, Path=InsertPresetInputCommand}"/>
             </Grid>
-            <local:CondensedInputControl MinHeight="50" Grid.Row="3" Margin="0,5" CondensedInputs="{Binding ElementName=Control, Path=RawInputText, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource InputConverter}}"/>
-            <DockPanel Grid.Row="4" LastChildFill="False">
+            <Grid Grid.Row="3">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <CheckBox Grid.Column="0" Content="Guarantee charge input" VerticalAlignment="Center" IsChecked="{Binding GuaranteeChargeInput, ElementName=Control}"/>
+                <Image Grid.Column="1" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="5" Source="../Images/question.png" Height="16" ToolTipService.ToolTip="Ensures that the move will be charged, for ex. Leo Eisen Sturm, Potemkin Hammerfall, etc.&#10;Also makes it so there's no need to type the charge into the &quot;Action to perform&quot;."/>
+            </Grid>
+            <ScrollViewer Grid.Row="4" MinHeight="50" Margin="0,5">
+                <local:CondensedInputControl CondensedInputs="{Binding ElementName=Control, Path=RawInputText, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource InputConverter}}"/>
+            </ScrollViewer>
+            <DockPanel Grid.Row="5" LastChildFill="False">
                 <Button Content="Import" DockPanel.Dock="Left" Width="75" Command="{Binding ElementName=Control, Path=ImportCommand}"></Button>
                 <Button Content="Export" DockPanel.Dock="Right" Width="75" Command="{Binding ElementName=Control, Path=ExportCommand}" ></Button>
             </DockPanel>

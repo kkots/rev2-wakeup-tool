@@ -104,7 +104,7 @@ public class Scenario : IDisposable
                 {
                     localRunThread = _runThread;
                 }
-
+                
                 // Approximately synchronise with the game's main loop finishing game state updates
                 // In practice this leaves >13ms for our work before the next tick
                 prevEngineTicks = engineTicks;
@@ -132,7 +132,7 @@ public class Scenario : IDisposable
                 }
                 // Only execute a reversal on the exact frame, skipping if we miss it
                 // Potentially configurable later, e.g. executing one frame early or on the exact frame if missed
-                int framesUntilEvent = _scenarioEvent.FramesUntilEvent(0);
+                int framesUntilEvent = _scenarioEvent.FramesUntilEvent(0, _memoryReader.IsUserControllingDummy());
                 
                 if (framesUntilEvent == int.MaxValue)
                 {
@@ -180,7 +180,7 @@ public class Scenario : IDisposable
                     bool actionValid = _scenarioEvent.CanEnable(_scenarioAction, pickedSlot);
                     if (!actionValid)
                     {
-                        _scenarioAction.Execute(pickedSlot);
+                        _scenarioAction.Execute(pickedSlot, pickedSlot);
                     }
                     else 
                     {
@@ -196,7 +196,7 @@ public class Scenario : IDisposable
                             dummyLocked = true;
                             _memoryReader.LockDummy(1 - _memoryReader.GetPlayerSide(), out oldWhatCanDoFlags);
                         }
-                        _scenarioAction.Execute();
+                        _scenarioAction.Execute(_scenarioAction.SlotNumber, pickedSlot);
                     }
                     pickedSlot = -1;
 

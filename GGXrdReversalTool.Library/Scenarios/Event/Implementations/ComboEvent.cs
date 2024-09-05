@@ -14,7 +14,7 @@ public class ComboEvent : IScenarioEvent
 
     public bool IsValid => MinComboCount <= MaxComboCount;
 
-    public int FramesUntilEvent(int inputReversalFrame)
+    public int FramesUntilEvent(int inputReversalFrame, bool isUserControllingDummy)
     {
         if (MemoryReader is null)
             return int.MaxValue;
@@ -25,7 +25,7 @@ public class ComboEvent : IScenarioEvent
 
         _oldComboCount = comboCount;
 
-        return result;
+        return isUserControllingDummy ? int.MaxValue : result;
     }
     public bool CanEnable(IScenarioAction action, int slotNumber)
     {

@@ -27,20 +27,25 @@ public class AnimationEvent : IScenarioEvent
 
     private int _lastBlockstun;
 
-    public int FramesUntilEvent(int inputReversalFrame)
+    public int FramesUntilEvent(int inputReversalFrame, bool isUserControllingDummy)
     {
         if (MemoryReader is null)
             return int.MaxValue;
 
         var playerSide = MemoryReader.GetPlayerSide();
         var dummySide = 1 - playerSide;
+        var blockstun = MemoryReader.GetBlockstun(dummySide);
+        var lastBlockstun = _lastBlockstun;
+        _lastBlockstun = blockstun;
+        
+        if (isUserControllingDummy)
+        {
+        	return int.MaxValue;
+        }
         var currentDummy = MemoryReader.GetCurrentDummy();
         var animationString = MemoryReader.ReadAnimationString(dummySide);
         var animFrame = MemoryReader.GetAnimFrame(dummySide);
-        var blockstun = MemoryReader.GetBlockstun(dummySide);
         var hitstop = MemoryReader.GetHitstop(dummySide);
-        var lastBlockstun = _lastBlockstun;
-        _lastBlockstun = blockstun;
 
         var result = animationString switch
         {

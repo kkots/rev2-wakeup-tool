@@ -25,6 +25,7 @@ public interface IMemoryReader
     int GetSlowdownFrames(int player);
     int GetSuperflashFreezeFrames(int player);
     int GetPlayerSide();
+    bool IsUserControllingDummy();
     bool IsTrainingMode();
     public bool IsWorldInTick();
     public uint GetEngineTickCount();
@@ -38,4 +39,5 @@ public interface IMemoryReader
     bool GetTechRelatedFlag(int player);
     int GetAirRecoverySetting();
     bool WriteAirRecoverySetting(int setting);
+    bool GuaranteeChargeInput(int player);
 }

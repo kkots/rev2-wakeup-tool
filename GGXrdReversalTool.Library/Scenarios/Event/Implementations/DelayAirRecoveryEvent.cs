@@ -13,16 +13,30 @@ public class DelayAirRecoveryEvent : IScenarioEvent
     private const string TechAnimation = "CmnActUkemi";
     private const int TechDuration = 9;
     public IMemoryReader? MemoryReader { get; set; }
-    public bool IsValid => true;
+    public bool IsValid => MinDelay <= MaxDelay;
     private int _framesSinceTechPossible = -1;
-    private bool _recoveryEnabled = false;
+    private bool _recoveryEnabled = true;
     private int _delayBy = -1;
-    public int FramesUntilEvent(int inputReversalFrame)
+    private int _prevAirRecoverySetting = -1;
+    public int FramesUntilEvent(int inputReversalFrame, bool isUserControllingDummy)
     {
         if (MemoryReader is null)
             return int.MaxValue;
         
         IScenarioEvent thisButEvent = this;
+        
+        int currentAirRecoverySetting = MemoryReader.GetAirRecoverySetting();
+        if (currentAirRecoverySetting != _prevAirRecoverySetting)
+        {
+            _oldAirRecoverySetting = currentAirRecoverySetting;
+            _recoveryEnabled = (currentAirRecoverySetting != 0);
+        }
+
+        if (isUserControllingDummy)
+        {
+            _framesSinceTechPossible = -1;
+            return int.MaxValue;
+        }
 
         var playerSide = MemoryReader.GetPlayerSide();
         var dummySide = 1 - playerSide;
@@ -38,6 +52,7 @@ public class DelayAirRecoveryEvent : IScenarioEvent
             if (_delayBy != 0 && _recoveryEnabled)
             {
                 MemoryReader.WriteAirRecoverySetting(0);
+                _prevAirRecoverySetting = 0;
                 _recoveryEnabled = false;
             }
         }
@@ -47,15 +62,18 @@ public class DelayAirRecoveryEvent : IScenarioEvent
             if (_framesSinceTechPossible == _delayBy)
             {
                 MemoryReader.StopDummyPlayback();
-                MemoryReader.WriteAirRecoverySetting(AirRecoveryType switch
-                    {
+                if (!_recoveryEnabled)
+                {
+                    _prevAirRecoverySetting = AirRecoveryType switch {
                         AirRecoveryTypes.Backward => 1,
                         AirRecoveryTypes.Neutral => 2,
                         AirRecoveryTypes.Forward => 3,
                         AirRecoveryTypes.Random => 4,
                         _ => 2
-                    });
-                _recoveryEnabled = true;
+                    };
+                    MemoryReader.WriteAirRecoverySetting(_prevAirRecoverySetting);
+                    _recoveryEnabled = true;
+                }
                 _framesSinceTechPossible = -1;
                 return thisButEvent.ApplySuperFreezeSlowdown(TechDuration, dummySide, playerSide, inputReversalFrame);;
             }
@@ -82,8 +100,8 @@ public class DelayAirRecoveryEvent : IScenarioEvent
             return;
         
         _oldAirRecoverySetting = MemoryReader.GetAirRecoverySetting();
-        MemoryReader.WriteAirRecoverySetting(0);
-        _recoveryEnabled = false;
+        _prevAirRecoverySetting = _oldAirRecoverySetting;
+        _recoveryEnabled = (_oldAirRecoverySetting != 0);
     }
     public void Finish()
     {

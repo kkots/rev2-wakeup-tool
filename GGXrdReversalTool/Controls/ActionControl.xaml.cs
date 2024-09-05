@@ -69,6 +69,19 @@ public sealed partial class ActionControl
         }
     }
     
+    private bool[] _guaranteeChargeInputArray = { false, false, false };
+    public bool GuaranteeChargeInput
+    {
+        get => _guaranteeChargeInputArray[_slotNumber - 1];
+        set
+        {
+            if (value == _guaranteeChargeInputArray[_slotNumber - 1]) return;
+            _guaranteeChargeInputArray[_slotNumber - 1] = value;
+            OnPropertyChanged();
+            CreateScenario();
+        }
+    }
+    
     private IScenarioEvent? _scenarioEvent;
     public IScenarioEvent? ScenarioEvent
     {
@@ -110,6 +123,7 @@ public sealed partial class ActionControl
             if (_slotNumber == coercedValue) return;
             _slotNumber = coercedValue;
             OnPropertyChanged("RawInputText");
+            OnPropertyChanged("GuaranteeChargeInput");
             CreateScenario();
         }
     }
@@ -251,7 +265,8 @@ public sealed partial class ActionControl
         ScenarioAction = new PlayReversalAction
         {
             Inputs = inputs,
-            SlotNumber = _slotNumber
+            SlotNumber = _slotNumber,
+            GuaranteeChargeInputArray = _guaranteeChargeInputArray
         };
         UpdateWarnings();
     }

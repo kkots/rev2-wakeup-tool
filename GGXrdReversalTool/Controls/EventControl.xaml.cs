@@ -60,7 +60,7 @@ public sealed partial class EventControl
             CreateScenario();
         }
     }
-
+    
     private int _minDelayAirRecoveryDelay = 5;
     public int MinDelayAirRecoveryDelay
     {
