@@ -35,6 +35,27 @@ public sealed partial class FrequencyControl : NotifiedUserControl
             if (value == _playRandomSlot) return;
             _playRandomSlot = value;
             OnPropertyChanged();
+            if (_playRandomSlot && _playSlotsInOrder) {
+            	_playSlotsInOrder = false;
+            	OnPropertyChanged("PlaySlotsInOrder");
+            }
+            CreateScenario();
+        }
+    }
+
+    private bool _playSlotsInOrder = false;
+    public bool PlaySlotsInOrder
+    {
+        get => _playSlotsInOrder;
+        set
+        {
+            if (value == _playSlotsInOrder) return;
+            _playSlotsInOrder = value;
+            OnPropertyChanged();
+            if (_playSlotsInOrder && _playRandomSlot) {
+            	_playRandomSlot = false;
+            	OnPropertyChanged("PlayRandomSlot");
+            }
             CreateScenario();
         }
     }
@@ -159,6 +180,7 @@ public sealed partial class FrequencyControl : NotifiedUserControl
         {
             Percentage = Percentage,
             PlayRandomSlot = PlayRandomSlot,
+            PlaySlotsInOrder = PlaySlotsInOrder,
             UseSlot1 = UseSlot1,
             UseSlot2 = UseSlot2,
             UseSlot3 = UseSlot3,

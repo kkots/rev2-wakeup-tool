@@ -7,6 +7,8 @@ public class PercentageFrequency : IScenarioFrequency
     private readonly Random _random = new();
     private int _percentage = 100;
     private bool _playRandomSlot = false;
+    private bool _playSlotsInOrder = false;
+    private int _playSlotsInOrderNext = 1;
     private bool _useSlot1 = false;
     private bool _useSlot2 = false;
     private bool _useSlot3 = false;
@@ -44,6 +46,12 @@ public class PercentageFrequency : IScenarioFrequency
         set => _playRandomSlot = value;
     }
     
+    public bool PlaySlotsInOrder
+    {
+        get => _playSlotsInOrder;
+        set => _playSlotsInOrder = value;
+    }
+    
     public bool UseSlot1
     {
         get => _useSlot1;
@@ -66,9 +74,14 @@ public class PercentageFrequency : IScenarioFrequency
     public bool ShouldHappen(out int slotNumber)
     {
         slotNumber = -1;
-        if (!_playRandomSlot)
+    	bool mainChanceOk = _random.Next(1, 101) <= _percentage;
+    	if (!_playRandomSlot && !mainChanceOk)
+    	{
+    		return false;
+    	}
+        if (!_playRandomSlot && !_playSlotsInOrder)
         {
-            return _random.Next(1, 101) <= _percentage;
+        	return true;
         }
         
         int[] slotNumbers = new int[3];
@@ -98,6 +111,40 @@ public class PercentageFrequency : IScenarioFrequency
             slotNumbers[slotCount] = 3;
             slotChances[slotCount] = _slot3Percentage;
             ++slotCount;
+        }
+        
+        if (_playSlotsInOrder)
+        {
+        	for (int i = 0; i < slotCount; ++i)
+        	{
+        		if (slotNumbers[i] == _playSlotsInOrderNext)
+        		{
+        			slotNumber = _playSlotsInOrderNext;
+        			if (i < slotCount - 1)
+        			{
+        				_playSlotsInOrderNext = slotNumbers[i + 1];
+        			}
+        			else
+        			{
+        				_playSlotsInOrderNext = slotNumbers[0];
+        			}
+        			return true;
+        		}
+        	}
+        	if (slotCount == 0)
+        	{
+        		return false;
+        	}
+    		slotNumber = slotNumbers[0];
+    		if (slotCount == 1)
+    		{
+    			_playSlotsInOrderNext = slotNumber;
+    		}
+    		else
+    		{
+    			_playSlotsInOrderNext = slotNumbers[1];
+    		}
+    		return true;
         }
         
         if (summaryChance < 100)
@@ -133,7 +180,7 @@ public class PercentageFrequency : IScenarioFrequency
     public int[] UsedSlotNumbers()
     {
         int[] array;
-        if (!_playRandomSlot) {
+        if (!_playRandomSlot && !_playSlotsInOrder) {
             array = new int[1];
             array[0] = -1;
             return array;
@@ -151,4 +198,9 @@ public class PercentageFrequency : IScenarioFrequency
         if (_useSlot3) array[count++] = 3;
         return array;
     }
+    
+    public void onStageReset()
+	{
+		_playSlotsInOrderNext = 1;
+	}
 }

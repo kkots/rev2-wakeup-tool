@@ -244,6 +244,7 @@ public class MemoryReader : IMemoryReader
     }
 
     public uint GetAswEngineTickCount() => Read<uint>(_pointerCollection.AswEngineTickCountPtr);
+    public bool MatchRunning() => Read<bool>(_pointerCollection.MatchRunningPtr);
 
 
     #region DLL Imports
@@ -428,6 +429,7 @@ public class MemoryReader : IMemoryReader
         public MemoryPointer WorldInTickPtr { get; private set; } = null!;
         public MemoryPointer EngineTickCountPtr { get; private set; } = null!;
         public MemoryPointer AswEngineTickCountPtr { get; private set; } = null!;
+        public MemoryPointer MatchRunningPtr { get; private set; } = null!;
         public MemoryPointer AirRecoverySettingPtr { get; private set; } = null!;
 
         private readonly Process _process;
@@ -495,6 +497,7 @@ public class MemoryReader : IMemoryReader
             EngineTickCountPtr = new MemoryPointer(_memoryReader.Read<int>(textAddr - 4 + FindPatternOffset(text, engineTickCountPattern)));
             
             AswEngineTickCountPtr = new MemoryPointer(matchPtrAddr, 0x1c6f70);
+            MatchRunningPtr = new MemoryPointer(matchPtrAddr, 0x1c7320);
 
             const string airRecoverySettingPattern = "i0wkBIPB7jPAg/kVD4e0AAAA";
             AirRecoverySettingPtr = new MemoryPointer(_memoryReader.Read<int>(textAddr + 0x9A + FindPatternOffset(text, airRecoverySettingPattern)));
