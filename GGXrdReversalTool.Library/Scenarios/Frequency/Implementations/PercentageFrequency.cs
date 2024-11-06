@@ -74,14 +74,14 @@ public class PercentageFrequency : IScenarioFrequency
     public bool ShouldHappen(out int slotNumber)
     {
         slotNumber = -1;
-    	bool mainChanceOk = _random.Next(1, 101) <= _percentage;
-    	if (!_playRandomSlot && !mainChanceOk)
-    	{
-    		return false;
-    	}
+        bool mainChanceOk = _random.Next(1, 101) <= _percentage;
+        if (!_playRandomSlot && !mainChanceOk)
+        {
+            return false;
+        }
         if (!_playRandomSlot && !_playSlotsInOrder)
         {
-        	return true;
+            return true;
         }
         
         int[] slotNumbers = new int[3];
@@ -115,36 +115,36 @@ public class PercentageFrequency : IScenarioFrequency
         
         if (_playSlotsInOrder)
         {
-        	for (int i = 0; i < slotCount; ++i)
-        	{
-        		if (slotNumbers[i] == _playSlotsInOrderNext)
-        		{
-        			slotNumber = _playSlotsInOrderNext;
-        			if (i < slotCount - 1)
-        			{
-        				_playSlotsInOrderNext = slotNumbers[i + 1];
-        			}
-        			else
-        			{
-        				_playSlotsInOrderNext = slotNumbers[0];
-        			}
-        			return true;
-        		}
-        	}
-        	if (slotCount == 0)
-        	{
-        		return false;
-        	}
-    		slotNumber = slotNumbers[0];
-    		if (slotCount == 1)
-    		{
-    			_playSlotsInOrderNext = slotNumber;
-    		}
-    		else
-    		{
-    			_playSlotsInOrderNext = slotNumbers[1];
-    		}
-    		return true;
+            for (int i = 0; i < slotCount; ++i)
+            {
+                if (slotNumbers[i] == _playSlotsInOrderNext)
+                {
+                    slotNumber = _playSlotsInOrderNext;
+                    if (i < slotCount - 1)
+                    {
+                        _playSlotsInOrderNext = slotNumbers[i + 1];
+                    }
+                    else
+                    {
+                        _playSlotsInOrderNext = slotNumbers[0];
+                    }
+                    return true;
+                }
+            }
+            if (slotCount == 0)
+            {
+                return false;
+            }
+            slotNumber = slotNumbers[0];
+            if (slotCount == 1)
+            {
+                _playSlotsInOrderNext = slotNumber;
+            }
+            else
+            {
+                _playSlotsInOrderNext = slotNumbers[1];
+            }
+            return true;
         }
         
         if (summaryChance < 100)
@@ -200,7 +200,7 @@ public class PercentageFrequency : IScenarioFrequency
     }
     
     public void onStageReset()
-	{
-		_playSlotsInOrderNext = 1;
-	}
+    {
+        _playSlotsInOrderNext = 1;
+    }
 }

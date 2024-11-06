@@ -126,7 +126,7 @@ public class Scenario : IDisposable
                 if (aswEngineTicks == prevAswEngineTicks) continue;
                 if (!_memoryReader.MatchRunning())  // stage reset?
                 {
-                	_scenarioFrequency.onStageReset();
+                    _scenarioFrequency.onStageReset();
                 }
                 
                 if (_scenarioAction.IsRunning)

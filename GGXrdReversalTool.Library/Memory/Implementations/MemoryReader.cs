@@ -95,9 +95,9 @@ public class MemoryReader : IMemoryReader
         Write(_pointerCollection.Players[player].WhatCanDoFlagsPtr, (int)oldFlags);
     }
     public int GetTimeUntilTech(int player) =>
-    	player is < 0 or > 1
-    	? 0
-    	: Read<int>(_pointerCollection.Players[player].TimeUntilTechPtr);
+        player is < 0 or > 1
+        ? 0
+        : Read<int>(_pointerCollection.Players[player].TimeUntilTechPtr);
     public bool GetTechRelatedFlag(int player)
     {
         if (player is < 0 or > 1)

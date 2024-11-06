@@ -40,7 +40,7 @@ public class AnimationEvent : IScenarioEvent
         
         if (isUserControllingDummy)
         {
-        	return int.MaxValue;
+            return int.MaxValue;
         }
         var currentDummy = MemoryReader.GetCurrentDummy();
         var animationString = MemoryReader.ReadAnimationString(dummySide);
