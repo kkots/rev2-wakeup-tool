@@ -17,8 +17,6 @@ public class MemoryReader : IMemoryReader
         _pointerCollection = new MemoryPointerCollection(process, this);
     }
 
-    private const int RecordingSlotSize = 4808;
-
     private readonly MemoryPointerCollection _pointerCollection;
 
     public Process Process { get; }
@@ -73,9 +71,9 @@ public class MemoryReader : IMemoryReader
         }
 
         var baseAddress = GetAddressWithOffsets(_pointerCollection.RecordingSlotPtr);
-        var slotAddress = IntPtr.Add(baseAddress, RecordingSlotSize * (slotNumber - 1));
+        var slotAddress = IntPtr.Add(baseAddress, SlotInput.RecordingSlotSize * (slotNumber - 1));
 
-        return Write(slotAddress, slotInput.Header.Concat(slotInput.Content));
+        return Write(slotAddress, slotInput.HeaderCapped.Concat(slotInput.Content).Take(SlotInput.RecordingSlotSize / 2));
     }
 
     public void LockDummy(int player, out uint oldFlags)
@@ -137,9 +135,9 @@ public class MemoryReader : IMemoryReader
         }
 
         var baseAddress = GetAddressWithOffsets(_pointerCollection.RecordingSlotPtr);
-        var slotAddress = IntPtr.Add(baseAddress, RecordingSlotSize * (slotNumber - 1));
+        var slotAddress = IntPtr.Add(baseAddress, SlotInput.RecordingSlotSize * (slotNumber - 1));
 
-        var readBytes = ReadBytes(slotAddress, RecordingSlotSize);
+        var readBytes = ReadBytes(slotAddress, SlotInput.RecordingSlotSize);
 
 
         var inputLength = byte.MaxValue * readBytes[5] + readBytes[4];

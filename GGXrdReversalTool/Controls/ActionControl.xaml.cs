@@ -57,6 +57,18 @@ public sealed partial class ActionControl
         }
     }
     
+    private Visibility _tooLongMarkerWarningVisible = Visibility.Collapsed;
+    public Visibility TooLongMarkerWarningVisible
+    {
+        get => _tooLongMarkerWarningVisible;
+        set
+        {
+            if (value == _tooLongMarkerWarningVisible) return;
+            _tooLongMarkerWarningVisible = value;
+            OnPropertyChanged();
+        }
+    }
+    
     private Visibility _noNeedStartMarkerInfoVisible = Visibility.Collapsed;
     public Visibility NoNeedStartMarkerInfoVisible
     {
@@ -276,6 +288,7 @@ public sealed partial class ActionControl
         UpdateTooShort();
         UpdateMissingStart();
         UpdateNoNeedStart();
+        UpdateTooLong();
     }
     
     private void UpdateTooShort()
@@ -307,6 +320,20 @@ public sealed partial class ActionControl
             NoStartMarkerWarningVisible = Visibility.Visible;
         } else {
             NoStartMarkerWarningVisible = Visibility.Collapsed;
+        }
+    }
+    
+    private void UpdateTooLong()
+    {
+        if (RawInputText.Length == 0) {
+            TooLongMarkerWarningVisible = Visibility.Collapsed;
+            return;
+        }
+        SlotInput testSlot = new SlotInput(RawInputText);
+        if (testSlot.Header.Count() + testSlot.Content.Count() > SlotInput.RecordingSlotSize) {
+            TooLongMarkerWarningVisible = Visibility.Visible;
+        } else {
+            TooLongMarkerWarningVisible = Visibility.Collapsed;
         }
     }
     
