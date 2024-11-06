@@ -60,6 +60,19 @@ public sealed partial class FrequencyControl : NotifiedUserControl
         }
     }
 
+    private bool _resetOnStageReset = false;
+    public bool ResetOnStageReset
+    {
+        get => _resetOnStageReset;
+        set
+        {
+            if (value == _resetOnStageReset) return;
+            _resetOnStageReset = value;
+            OnPropertyChanged();
+            CreateScenario();
+        }
+    }
+
     private int _slot1Percentage = 100;
     public int Slot1Percentage
     {
@@ -181,6 +194,7 @@ public sealed partial class FrequencyControl : NotifiedUserControl
             Percentage = Percentage,
             PlayRandomSlot = PlayRandomSlot,
             PlaySlotsInOrder = PlaySlotsInOrder,
+            ResetOnStageReset = ResetOnStageReset,
             UseSlot1 = UseSlot1,
             UseSlot2 = UseSlot2,
             UseSlot3 = UseSlot3,

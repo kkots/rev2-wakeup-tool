@@ -8,6 +8,7 @@ public class PercentageFrequency : IScenarioFrequency
     private int _percentage = 100;
     private bool _playRandomSlot = false;
     private bool _playSlotsInOrder = false;
+    private bool _resetOnStageReset = false;
     private int _playSlotsInOrderNext = 1;
     private bool _useSlot1 = false;
     private bool _useSlot2 = false;
@@ -50,6 +51,12 @@ public class PercentageFrequency : IScenarioFrequency
     {
         get => _playSlotsInOrder;
         set => _playSlotsInOrder = value;
+    }
+    
+    public bool ResetOnStageReset
+    {
+        get => _resetOnStageReset;
+        set => _resetOnStageReset = value;
     }
     
     public bool UseSlot1
@@ -201,6 +208,9 @@ public class PercentageFrequency : IScenarioFrequency
     
     public void onStageReset()
     {
-        _playSlotsInOrderNext = 1;
+        if (_resetOnStageReset)
+        {
+            _playSlotsInOrderNext = 1;
+        }
     }
 }
