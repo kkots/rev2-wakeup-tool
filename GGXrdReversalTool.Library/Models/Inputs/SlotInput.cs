@@ -6,6 +6,7 @@ namespace GGXrdReversalTool.Library.Models.Inputs;
 
 public class SlotInput
 {
+	public const int RecordingSlotSize = 4808;
     private const char FrameDelimiter = ',';
     private const char WakeUpFrameDelimiter = '!';
     private const int WakeupFrameMask = 0x200;
@@ -187,6 +188,7 @@ public class SlotInput
 
 
     public IEnumerable<ushort> Header => new List<ushort> { 0, 0, (ushort)Content.Count(), 0 };
+    public IEnumerable<ushort> HeaderCapped => new List<ushort> { 0, 0, (ushort)Math.Min(  Content.Count(), (RecordingSlotSize - 8) / 2  ), 0	};
 
     private string SingleInputParse(ushort input, bool isP2 = false)
     {

@@ -29,6 +29,7 @@ public interface IMemoryReader
     bool IsTrainingMode();
     public bool IsWorldInTick();
     public uint GetEngineTickCount();
+    public bool MatchRunning();
     public uint GetAswEngineTickCount();
 
     Process Process { get; }

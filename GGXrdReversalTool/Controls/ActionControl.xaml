@@ -35,10 +35,12 @@
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
                     <Image Grid.Column="0" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="5" Source="../Images/info.png" Height="16" ToolTipService.ToolTip="Sequences shorter than 5f cannot be used with the in-game, built-in Random slot playback (but can in this mod's random playback)." Visibility="{Binding TooShortInfoVisible, ElementName=Control}"/>
                     <Image Grid.Column="1" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="5" Source="../Images/info.png" Height="16" ToolTipService.ToolTip="The &quot;!&quot; character doesn't affect anything and is not needed in the currently selected &quot;When&quot; mode." Visibility="{Binding NoNeedStartMarkerInfoVisible, ElementName=Control}"/>
                     <Image Grid.Column="1" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="5" Source="../Images/warning.png" Height="16" ToolTipService.ToolTip="Missing &quot;!&quot; character, denoting the reversal frame." Visibility="{Binding NoStartMarkerWarningVisible, ElementName=Control}"/>
+                    <Image Grid.Column="2" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="5" Source="../Images/warning.png" Height="16" ToolTipService.ToolTip="The input sequence is too long and will only partially be written." Visibility="{Binding TooLongMarkerWarningVisible, ElementName=Control}"/>
                 </Grid>
                 <local:PresetMenu Grid.Column="1" Margin="0,5" InsertPresetInputCommand="{Binding ElementName=Control, Path=InsertPresetInputCommand}"/>
             </Grid>

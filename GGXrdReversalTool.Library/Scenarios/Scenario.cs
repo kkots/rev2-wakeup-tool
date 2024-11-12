@@ -124,6 +124,10 @@ public class Scenario : IDisposable
                 prevAswEngineTicks = aswEngineTicks;
                 aswEngineTicks = _memoryReader.GetAswEngineTickCount();
                 if (aswEngineTicks == prevAswEngineTicks) continue;
+                if (!_memoryReader.MatchRunning())  // stage reset?
+                {
+                    _scenarioFrequency.onStageReset();
+                }
                 
                 if (_scenarioAction.IsRunning)
                 {

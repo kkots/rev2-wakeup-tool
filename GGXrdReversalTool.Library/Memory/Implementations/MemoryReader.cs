@@ -17,8 +17,6 @@ public class MemoryReader : IMemoryReader
         _pointerCollection = new MemoryPointerCollection(process, this);
     }
 
-    private const int RecordingSlotSize = 4808;
-
     private readonly MemoryPointerCollection _pointerCollection;
 
     public Process Process { get; }
@@ -73,9 +71,9 @@ public class MemoryReader : IMemoryReader
         }
 
         var baseAddress = GetAddressWithOffsets(_pointerCollection.RecordingSlotPtr);
-        var slotAddress = IntPtr.Add(baseAddress, RecordingSlotSize * (slotNumber - 1));
+        var slotAddress = IntPtr.Add(baseAddress, SlotInput.RecordingSlotSize * (slotNumber - 1));
 
-        return Write(slotAddress, slotInput.Header.Concat(slotInput.Content));
+        return Write(slotAddress, slotInput.HeaderCapped.Concat(slotInput.Content).Take(SlotInput.RecordingSlotSize / 2));
     }
 
     public void LockDummy(int player, out uint oldFlags)
@@ -95,9 +93,9 @@ public class MemoryReader : IMemoryReader
         Write(_pointerCollection.Players[player].WhatCanDoFlagsPtr, (int)oldFlags);
     }
     public int GetTimeUntilTech(int player) =>
-    	player is < 0 or > 1
-    	? 0
-    	: Read<int>(_pointerCollection.Players[player].TimeUntilTechPtr);
+        player is < 0 or > 1
+        ? 0
+        : Read<int>(_pointerCollection.Players[player].TimeUntilTechPtr);
     public bool GetTechRelatedFlag(int player)
     {
         if (player is < 0 or > 1)
@@ -137,9 +135,9 @@ public class MemoryReader : IMemoryReader
         }
 
         var baseAddress = GetAddressWithOffsets(_pointerCollection.RecordingSlotPtr);
-        var slotAddress = IntPtr.Add(baseAddress, RecordingSlotSize * (slotNumber - 1));
+        var slotAddress = IntPtr.Add(baseAddress, SlotInput.RecordingSlotSize * (slotNumber - 1));
 
-        var readBytes = ReadBytes(slotAddress, RecordingSlotSize);
+        var readBytes = ReadBytes(slotAddress, SlotInput.RecordingSlotSize);
 
 
         var inputLength = byte.MaxValue * readBytes[5] + readBytes[4];
@@ -244,6 +242,7 @@ public class MemoryReader : IMemoryReader
     }
 
     public uint GetAswEngineTickCount() => Read<uint>(_pointerCollection.AswEngineTickCountPtr);
+    public bool MatchRunning() => Read<bool>(_pointerCollection.MatchRunningPtr);
 
 
     #region DLL Imports
@@ -428,6 +427,7 @@ public class MemoryReader : IMemoryReader
         public MemoryPointer WorldInTickPtr { get; private set; } = null!;
         public MemoryPointer EngineTickCountPtr { get; private set; } = null!;
         public MemoryPointer AswEngineTickCountPtr { get; private set; } = null!;
+        public MemoryPointer MatchRunningPtr { get; private set; } = null!;
         public MemoryPointer AirRecoverySettingPtr { get; private set; } = null!;
 
         private readonly Process _process;
@@ -495,6 +495,7 @@ public class MemoryReader : IMemoryReader
             EngineTickCountPtr = new MemoryPointer(_memoryReader.Read<int>(textAddr - 4 + FindPatternOffset(text, engineTickCountPattern)));
             
             AswEngineTickCountPtr = new MemoryPointer(matchPtrAddr, 0x1c6f70);
+            MatchRunningPtr = new MemoryPointer(matchPtrAddr, 0x1c7320);
 
             const string airRecoverySettingPattern = "i0wkBIPB7jPAg/kVD4e0AAAA";
             AirRecoverySettingPtr = new MemoryPointer(_memoryReader.Read<int>(textAddr + 0x9A + FindPatternOffset(text, airRecoverySettingPattern)));

@@ -25,7 +25,6 @@ public sealed partial class FrequencyRandomSlotControl : NotifiedUserControl
         }
     }
 
-    // Using a DependencyProperty as the backing store for GroupName.  This enables animation, styling, binding, etc...
     public static readonly DependencyProperty UseSlotProperty =
         DependencyProperty.Register(nameof(UseSlot), typeof(bool), typeof(FrequencyRandomSlotControl),
             new FrameworkPropertyMetadata(false, OnUseSlotPropertyChanged));
