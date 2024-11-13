@@ -206,7 +206,7 @@ public class PercentageFrequency : IScenarioFrequency
         return array;
     }
     
-    public void onStageReset()
+    public void OnStageReset()
     {
         if (_resetOnStageReset)
         {
