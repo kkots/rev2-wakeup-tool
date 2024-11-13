@@ -13,5 +13,5 @@ public interface IScenarioFrequency
     bool ShouldHappen(out int slotNumber);
     IMemoryReader? MemoryReader { get; internal set; }
     int[] UsedSlotNumbers();
-    void onStageReset();
+    void OnStageReset();
 }

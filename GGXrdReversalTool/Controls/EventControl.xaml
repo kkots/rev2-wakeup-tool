@@ -96,7 +96,29 @@
                 </Grid>
             </Grid>
         </DataTemplate>
-        <local:EventControlDataTemplateSelector x:Key="EventControlDataTemplateSelector" ComboDataTemplate="{StaticResource ComboDataTemplate}" AnimationDataTemplate="{StaticResource AnimationDataTemplate}" SimulatedRoundstartDataTemplate="{StaticResource SimulatedRoundstartDataTemplate}" DelayAirRecoveryDataTemplate="{StaticResource DelayAirRecoveryDataTemplate}" />
+        <converters:PeriodicEventConverter x:Key="PeriodicEventConverter" />
+        <DataTemplate x:Key="PeriodicDataTemplate">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition/>
+                    <RowDefinition/>
+                    <RowDefinition/>
+                    <RowDefinition/>
+                </Grid.RowDefinitions>
+                <TextBlock Grid.Row="0" TextWrapping="Wrap">
+                    <TextBlock.Text>
+                        <MultiBinding Converter="{StaticResource PeriodicEventConverter}">
+                            <Binding Path="MinPeriodic" ElementName="Control"/>
+                            <Binding Path="MaxPeriodic" ElementName="Control"/>
+                        </MultiBinding>
+                    </TextBlock.Text>
+                </TextBlock>
+                <Slider Grid.Row="1" Value="{Binding ElementName=Control, Path=MinPeriodic}" Minimum="1" Maximum="{Binding ElementName=Control, Path=MaxPeriodic}"/>
+                <Slider Grid.Row="2" Value="{Binding ElementName=Control, Path=MaxPeriodic}" Minimum="{Binding ElementName=Control, Path=MinPeriodic}" Maximum="360"/>
+                <CheckBox Grid.Row="3" Content="Only when opponent is idle" IsChecked="{Binding ElementName=Control, Path=PeriodicallyOnlyWhenIdle}"/>
+            </Grid>
+        </DataTemplate>
+        <local:EventControlDataTemplateSelector x:Key="EventControlDataTemplateSelector" ComboDataTemplate="{StaticResource ComboDataTemplate}" AnimationDataTemplate="{StaticResource AnimationDataTemplate}" SimulatedRoundstartDataTemplate="{StaticResource SimulatedRoundstartDataTemplate}" DelayAirRecoveryDataTemplate="{StaticResource DelayAirRecoveryDataTemplate}" PeriodicDataTemplate="{StaticResource PeriodicDataTemplate}" />
         <converters:ScenarioEventTypeToStringConverter x:Key="ScenarioEventTypeToStringConverter" />
     </local:NotifiedUserControl.Resources>
     <GroupBox Header="When">
