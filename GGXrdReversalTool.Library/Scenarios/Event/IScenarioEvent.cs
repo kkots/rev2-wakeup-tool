@@ -36,4 +36,5 @@ public interface IScenarioEvent
 
         return result;
     }
+    void OnStageReset() { }
 }

@@ -89,6 +89,48 @@ public sealed partial class EventControl
             CreateScenario();
         }
     }
+    
+    private bool _periodicallyOnlyWhenIdle = true;
+    public bool PeriodicallyOnlyWhenIdle
+    {
+        get => _periodicallyOnlyWhenIdle;
+        set
+        {
+            if (value == _periodicallyOnlyWhenIdle) return;
+            _periodicallyOnlyWhenIdle = value;
+            OnPropertyChanged();
+            CreateScenario();
+        }
+    }
+    
+    private int _minPeriodic = 180;
+    public int MinPeriodic
+    {
+        get => _minPeriodic;
+        set
+        {
+            var coercedValue = Math.Clamp(value, 1, MaxPeriodic);
+            if (coercedValue == _minPeriodic) return;
+            _minPeriodic = coercedValue;
+            OnPropertyChanged();
+            CreateScenario();
+        }
+    }
+
+    
+    private int _maxPeriodic = 180;
+    public int MaxPeriodic
+    {
+        get => _maxPeriodic;
+        set
+        {
+            var coercedValue = Math.Max(value, MinPeriodic);
+            if (coercedValue == _maxPeriodic) return;
+            _maxPeriodic = coercedValue;
+            OnPropertyChanged();
+            CreateScenario();
+        }
+    }
 
     public IEnumerable<AirRecoveryTypes> AirRecoveryTypesList => Enum.GetValues<AirRecoveryTypes>();
     public AirRecoveryTypes _selectedAirRecoveryType = AirRecoveryTypes.Forward;
@@ -210,6 +252,12 @@ public sealed partial class EventControl
                 MaxDelay = MaxDelayAirRecoveryDelay,
                 AirRecoveryType = SelectedAirRecoveryType
             },
+            ScenarioEventTypes.Periodically => new PeriodicEvent
+            {
+                MinDelay = MinPeriodic,
+                MaxDelay = MaxPeriodic,
+                OnlyWhenIdle = PeriodicallyOnlyWhenIdle
+            },
             _ => null
             
         };
@@ -224,6 +272,7 @@ public class EventControlDataTemplateSelector : DataTemplateSelector
     public DataTemplate AnimationDataTemplate { get; set; } = null!;
     public DataTemplate SimulatedRoundstartDataTemplate { get; set; } = null!;
     public DataTemplate DelayAirRecoveryDataTemplate { get; set; } = null!;
+    public DataTemplate PeriodicDataTemplate { get; set; } = null!;
 
     public override DataTemplate SelectTemplate(object item, DependencyObject container)
     {
@@ -235,6 +284,7 @@ public class EventControlDataTemplateSelector : DataTemplateSelector
                 ScenarioEventTypes.Combo => ComboDataTemplate,
                 ScenarioEventTypes.SimulatedRoundstart => SimulatedRoundstartDataTemplate,
                 ScenarioEventTypes.DelayAirRecovery => DelayAirRecoveryDataTemplate,
+                ScenarioEventTypes.Periodically => PeriodicDataTemplate,
                 _ => new DataTemplate()
             };
         }
