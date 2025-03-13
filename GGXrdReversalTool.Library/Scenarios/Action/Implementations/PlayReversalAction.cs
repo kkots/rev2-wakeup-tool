@@ -14,7 +14,7 @@ public class PlayReversalAction : IScenarioAction
     public SlotInput[] Inputs { get; set; } = {};
     public bool IsRunning { get; private set; }
     public bool[] GuaranteeChargeInputArray { get; set; } = { false, false, false };
-
+    //public BlockType 
     public void Init(int slotNumber)
     {
         if (MemoryReader == null)
