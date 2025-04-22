@@ -1,16 +1,36 @@
-﻿<UserControl x:Class="GGXrdReversalTool.Controls.SlotsControl"
+﻿<local:NotifiedUserControl x:Class="GGXrdReversalTool.Controls.SlotsControl"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:local="clr-namespace:GGXrdReversalTool.Controls"
              x:Name="uc"
              mc:Ignorable="d" 
              d:DesignHeight="46" d:DesignWidth="800" MinHeight="46">
     <GroupBox Header="{Binding GroupName,ElementName=uc}">
-        <UniformGrid Columns="3">
-            <RadioButton x:Name="RadioButton1" Content="Slot 1" HorizontalAlignment="Center" VerticalAlignment="Center" Checked="RadioButton1_Checked" IsChecked="True"/>
-            <RadioButton x:Name="RadioButton2" Content="Slot 2" HorizontalAlignment="Center" VerticalAlignment="Center" Checked="RadioButton2_Checked"/>
-            <RadioButton x:Name="RadioButton3" Content="Slot 3" HorizontalAlignment="Center" VerticalAlignment="Center" Checked="RadioButton3_Checked"/>
-        </UniformGrid>
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <ItemsControl ItemsSource="{Binding ControlData.Slots, ElementName=uc}">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <UniformGrid Columns="{Binding RelativeSource={RelativeSource AncestorType={x:Type local:SlotsControl}}, Path=NumberOfSlots}"/>
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <RadioButton Content="{Binding Name}" HorizontalAlignment="Center" VerticalAlignment="Center" Checked="OnRadioButtonChecked" IsChecked="{Binding IsChecked}" Tag="{Binding Index}"/>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+            <StackPanel Grid.Column="2">
+                <Button Content="Add Slot" Click="OnAddSlotClick"
+                    ToolTipService.ToolTip="For the currently selected event, adds a new slot to the end. Each slot has its own Action. Each event has its own separate slots and only uses one of them, unless in the 'How often?' panel on the right you checked 'Play a random slot' or 'Play slots in order' checkboxes."/>
+                <Button Content="Remove Slot" Click="OnRemoveSlotClick" Visibility="{Binding RemoveSlotButtonVisible, ElementName=uc}"
+                    ToolTipService.ToolTip="For the currently selected event, deletes the currently selected slot."/>
+            </StackPanel>
+        </Grid>
     </GroupBox>
-</UserControl>
+</local:NotifiedUserControl>

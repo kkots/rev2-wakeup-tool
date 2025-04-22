@@ -1,7 +1,10 @@
 ﻿using System;
+using System.ComponentModel;
 using System.Windows;
 using GGXrdReversalTool.Library.Scenarios.Frequency;
 using GGXrdReversalTool.Library.Scenarios.Frequency.Implementations;
+using GGXrdReversalTool.ViewModels;
+using System.Linq;
 
 namespace GGXrdReversalTool.Controls;
 
@@ -11,467 +14,255 @@ public sealed partial class FrequencyControl : NotifiedUserControl
     {
         InitializeComponent();
     }
-
-    private int _percentage = 100;
-    public int Percentage
+    
+    public FrequencyControlData? ControlData
     {
-        get => _percentage;
-        set
-        {
-            var coercedValue = Math.Clamp(value, 0, 100);
-            if (coercedValue == _percentage) return;
-            _percentage = coercedValue;
-            OnPropertyChanged();
-            CreateScenario();
-        }
+        get => (FrequencyControlData?)GetValue(ControlDataProperty);
+        set => SetValue(ControlDataProperty, value);
     }
-
-    private bool _playRandomSlot = false;
-    public bool PlayRandomSlot
+    public static readonly DependencyProperty ControlDataProperty =
+        DependencyProperty.Register(nameof(ControlData), typeof(FrequencyControlData), typeof(FrequencyControl),
+            new PropertyMetadata(default(FrequencyControlData), OnControlDataPropertyChanged));
+    
+    public SlotsControlData? SlotsData
     {
-        get => _playRandomSlot;
-        set
-        {
-            if (value == _playRandomSlot) return;
-            _playRandomSlot = value;
-            OnPropertyChanged();
-            if (_playRandomSlot && _playSlotsInOrder) {
-                _playSlotsInOrder = false;
-                OnPropertyChanged("PlaySlotsInOrder");
-            }
-            CreateScenario();
-        }
+        get => (SlotsControlData?)GetValue(SlotsDataProperty);
+        set => SetValue(SlotsDataProperty, value);
     }
-
-    private bool _playSlotsInOrder = false;
-    public bool PlaySlotsInOrder
+    public static readonly DependencyProperty SlotsDataProperty =
+        DependencyProperty.Register(nameof(SlotsData), typeof(SlotsControlData), typeof(FrequencyControl),
+            new PropertyMetadata(null));
+    
+    private FrequencyControlData? _prevSubscribedControlData = null;
+    public static void OnControlDataPropertyChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
-        get => _playSlotsInOrder;
-        set
+        FrequencyControl control = (FrequencyControl)d;
+        if (control._prevSubscribedControlData != null)
         {
-            if (value == _playSlotsInOrder) return;
-            _playSlotsInOrder = value;
-            OnPropertyChanged();
-            if (_playSlotsInOrder && _playRandomSlot) {
-                _playRandomSlot = false;
-                OnPropertyChanged("PlayRandomSlot");
-            }
-            CreateScenario();
+            control._prevSubscribedControlData.PropertyChanged -= control.OnSubscribedControlDataPropertyChanged;
+            control._prevSubscribedControlData.SlotChanged -= control.OnSubscribedControlDataSlotChanged;
         }
-    }
-
-    private bool _resetOnStageReset = false;
-    public bool ResetOnStageReset
-    {
-        get => _resetOnStageReset;
-        set
+        
+        control._prevSubscribedControlData = control.ControlData;
+        if (control.ControlData != null)
         {
-            if (value == _resetOnStageReset) return;
-            _resetOnStageReset = value;
-            OnPropertyChanged();
-            CreateScenario();
+            control.ControlData.PropertyChanged += control.OnSubscribedControlDataPropertyChanged;
+            control.ControlData.SlotChanged += control.OnSubscribedControlDataSlotChanged;
         }
+        control.ResetLastChangedSlider();
     }
-
-    private int _slot1Percentage = 100;
-    public int Slot1Percentage
+    
+    public void OnSubscribedControlDataPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
-        get => _slot1Percentage;
-        set
-        {
-            var coercedValue = Math.Clamp(value, 0, 100);
-            if (coercedValue == _slot1Percentage) return;
-            _slot1Percentage = coercedValue;
-            SetLastChangedSlider(1);
-            LimitOtherPercentages(1);
-            OnPropertyChanged();
-            CreateScenario();
-        }
+        CreateScenario();
     }
-
-    private int _slot2Percentage = 100;
-    public int Slot2Percentage
+    
+    private bool _ignoreAnyEvents = false;
+    public void OnSubscribedControlDataSlotChanged(object? sender, SlotChangedEventArgs e)
     {
-        get => _slot2Percentage;
-        set
+        if (_ignoreAnyEvents) return;
+        _ignoreAnyEvents = true;
+        if (e.Action == SlotChangedAction.Use || e.Action == SlotChangedAction.Everything)
         {
-            var coercedValue = Math.Clamp(value, 0, 100);
-            if (coercedValue == _slot2Percentage) return;
-            _slot2Percentage = coercedValue;
-            SetLastChangedSlider(2);
-            LimitOtherPercentages(2);
-            OnPropertyChanged();
-            CreateScenario();
-        }
-    }
-
-    private int _slot3Percentage = 100;
-    public int Slot3Percentage
-    {
-        get => _slot3Percentage;
-        set
-        {
-            var coercedValue = Math.Clamp(value, 0, 100);
-            if (coercedValue == _slot3Percentage) return;
-            _slot3Percentage = coercedValue;
-            SetLastChangedSlider(3);
-            LimitOtherPercentages(3);
-            OnPropertyChanged();
-            CreateScenario();
-        }
-    }
-
-    private bool _useSlot1 = false;
-    public bool UseSlot1
-    {
-        get => _useSlot1;
-        set
-        {
-            if (value == _useSlot1) return;
-            _useSlot1 = value;
             ResetLastChangedSlider();
-            if (value)
+            if (e.Slot.Use)
             {
-                LimitThisPercentage(1);
+                LimitThisPercentage(e.Index);
             }
-            OnPropertyChanged();
-            CreateScenario();
         }
-    }
-
-    private bool _useSlot2 = false;
-    public bool UseSlot2
-    {
-        get => _useSlot2;
-        set
+        if (e.Action == SlotChangedAction.Percentage || e.Action == SlotChangedAction.Everything)
         {
-            if (value == _useSlot2) return;
-            _useSlot2 = value;
-            ResetLastChangedSlider();
-            if (value)
-            {
-                LimitThisPercentage(2);
-            }
-            OnPropertyChanged();
-            CreateScenario();
+            SetLastChangedSlider(e.Index);
+            LimitOtherPercentages(e.Index);
         }
+        CreateScenario();
+        _ignoreAnyEvents = false;
     }
-
-    private bool _useSlot3 = false;
-    public bool UseSlot3
-    {
-        get => _useSlot3;
-        set
-        {
-            if (value == _useSlot3) return;
-            _useSlot3 = value;
-            ResetLastChangedSlider();
-            if (value)
-            {
-                LimitThisPercentage(3);
-            }
-            OnPropertyChanged();
-            CreateScenario();
-        }
-    }
-    private readonly int[] _otherSlidersStartingValues = new int[2];
+    
     private int _lastChangedSlider = -1;
 
-    public IScenarioFrequency? ScenarioFrequency
+    private IScenarioFrequency? _scenarioFrequency
     {
-        get => (IScenarioFrequency)GetValue(ScenarioFrequencyProperty);
-        set => SetValue(ScenarioFrequencyProperty, value);
+        get => TabElement?.ScenarioFrequency;
+        set => TabElement!.ScenarioFrequency = value;
     }
-
-    public static readonly DependencyProperty ScenarioFrequencyProperty =
-        DependencyProperty.Register(nameof(ScenarioFrequency), typeof(IScenarioFrequency), typeof(FrequencyControl),
-            new PropertyMetadata(new PercentageFrequency { Percentage = 100 }));
-
+    
+    public EventTabElement? TabElement
+    {
+        get => (EventTabElement?)GetValue(TabElementProperty);
+        set => SetValue(TabElementProperty, value);
+    }
+    public static readonly DependencyProperty TabElementProperty =
+        DependencyProperty.Register(nameof(TabElement), typeof(EventTabElement), typeof(FrequencyControl),
+            new PropertyMetadata(default(EventTabElement)));
+    
     private void CreateScenario()
     {
-        ScenarioFrequency = new PercentageFrequency()
+        if (SlotsData == null || ControlData == null || TabElement == null) return;
+        
+        if (!ControlData.PlayRandomSlot && !ControlData.PlaySlotsInOrder && ControlData.Percentage >= 100)
         {
-            Percentage = Percentage,
-            PlayRandomSlot = PlayRandomSlot,
-            PlaySlotsInOrder = PlaySlotsInOrder,
-            ResetOnStageReset = ResetOnStageReset,
-            UseSlot1 = UseSlot1,
-            UseSlot2 = UseSlot2,
-            UseSlot3 = UseSlot3,
-            Slot1Percentage = Slot1Percentage,
-            Slot2Percentage = Slot2Percentage,
-            Slot3Percentage = Slot3Percentage
-        };
+            _scenarioFrequency = new SingleSlotFrequency();
+        }
+        else if (!ControlData.PlayRandomSlot && !ControlData.PlaySlotsInOrder && ControlData.Percentage < 100)
+        {
+            _scenarioFrequency = new PercentageFrequency()
+            {
+                Percentage = ControlData.Percentage
+            };
+        }
+        else if (!ControlData.PlayRandomSlot && ControlData.PlaySlotsInOrder)
+        {
+            _scenarioFrequency = new SlotsInOrderFrequency()
+            {
+                Percentage = ControlData.Percentage,
+                ResetOnStageReset = ControlData.ResetOnStageReset,
+                UsedSlotIndices = SlotsData.Slots.Where(slot => slot.Use).Select(slot => slot.Index).ToArray()
+            };
+        }
+        else if (ControlData.PlayRandomSlot && !ControlData.PlaySlotsInOrder)
+        {
+            _scenarioFrequency = new RandomSlotFrequency()
+            {
+                Slots = SlotsData.Slots.Where(slot => slot.Use).Select(slot => new RandomSlotFrequencySlot()
+                    {
+                        Index = slot.Index,
+                        Percentage = slot.Percentage
+                    }).ToArray()
+            };
+        }
+        else
+        {
+            _scenarioFrequency = null;
+        }
     }
     
     private int SumPercentage()
     {
-        int summary = 0;
-        if (_useSlot1)
-        {
-            summary += _slot1Percentage;
-        }
-        if (_useSlot2)
-        {
-            summary += _slot2Percentage;
-        }
-        if (_useSlot3)
-        {
-            summary += _slot3Percentage;
-        }
-        return summary;
+        if (SlotsData == null) return 0;
+        return SlotsData.Slots.Where(slot => slot.Use).Sum(slot => slot.Percentage);
     }
     
     private int TotalUsedSlots()
     {
-        int count = 0;
-        if (_useSlot1)
-        {
-            ++count;
-        }
-        if (_useSlot2)
-        {
-            ++count;
-        }
-        if (_useSlot3)
-        {
-            ++count;
-        }
-        return count;
+        if (SlotsData == null) return 0;
+        return SlotsData.Slots.Where(slot => slot.Use).Count();
     }
     
-    private int GetPercentage(int slotNumber)
-    {
-        switch (slotNumber)
-        {
-            case 1:
-                return _slot1Percentage;
-            case 2:
-                return _slot2Percentage;
-            case 3:
-                return _slot3Percentage;
-        }
-        return 0;
-    }
-    
-    private void SetPercentage(int slotNumber, int percentage)
-    {
-        switch (slotNumber)
-        {
-            case 1:
-                _slot1Percentage = percentage;
-                break;
-            case 2:
-                _slot2Percentage = percentage;
-                break;
-            case 3:
-                _slot3Percentage = percentage;
-                break;
-        }
-    }
-    
-    private bool GetUseSlot(int slotNumber)
-    {
-        switch (slotNumber)
-        {
-            case 1:
-                return _useSlot1;
-            case 2:
-                return _useSlot2;
-            case 3:
-                return _useSlot3;
-        }
-        return false;
-    }
-    
-    private void NotifyPercentageChanged(int slotNumber)
-    {
-        switch (slotNumber)
-        {
-            case 1:
-                OnPropertyChanged("Slot1Percentage");
-                break;
-            case 2:
-                OnPropertyChanged("Slot2Percentage");
-                break;
-            case 3:
-                OnPropertyChanged("Slot3Percentage");
-                break;
-        }
-    }
-    
-    private void LimitOtherPercentages(int initiatorNumber)
+    private void LimitOtherPercentages(int initiatorIndex)
     {
         int summary = SumPercentage();
         int count = TotalUsedSlots();
-        if (count <= 1 || summary <= 100) return;
+        if (count <= 1 || summary <= 100 || SlotsData == null) return;
         int diff = summary - 100;
         if (count == 2)
         {
-            for (int i = 1; i <= 3; ++i)
+            foreach (SlotsControlSlotData slot in SlotsData.Slots)
             {
-                if (GetUseSlot(i) && initiatorNumber != i)
+                if (slot.Use && initiatorIndex != slot.Index)
                 {
-                    SetPercentage(i, Math.Max(0, GetPercentage(i) - diff));
-                    NotifyPercentageChanged(i);
-                    break;
+                    slot.Percentage = Math.Max(0, slot.Percentage - diff);
+                    return;
                 }
             }
             return;
         }
         
-        int[] theOtherNumbers = new int[count - 1];
-        float[] otherRatios = new float[count - 1];
-        count = 0;
-        int theOtherSum = 0;
-        for (int i = 1; i <= 3; ++i)
-        {
-            if (GetUseSlot(i) && initiatorNumber != i)
-            {
-                int startingValue = _otherSlidersStartingValues[count];
-                theOtherSum += startingValue;
-                theOtherNumbers[count] = i;
-                ++count;
-            }
-        }
+        
+        SlotsControlSlotData[] otherSlots = SlotsData.Slots
+            .Where(slot => slot.Use && initiatorIndex != slot.Index).ToArray();
+        
+        int theOtherSum = otherSlots.Sum(otherSlot => otherSlot.StartingValue);
         if (theOtherSum == 0) return;
+        
         float diffFloat = diff;
-        for (int i = 0; i < count; ++i)
+        foreach (SlotsControlSlotData other in otherSlots)
         {
-            int startingValue = _otherSlidersStartingValues[i];
-            otherRatios[i] = (float)startingValue / (float)theOtherSum;
-            int thisDiffInt = (int)(otherRatios[i] * diffFloat);
-            int slotNumber = theOtherNumbers[i];
-            int percentageValue = GetPercentage(slotNumber);
+            float ratio = (float)other.StartingValue / (float)theOtherSum;
+            int thisDiffInt = (int)(ratio * diffFloat);
+            int percentageValue = other.Percentage;
             if (percentageValue < thisDiffInt)
             {
                 thisDiffInt = percentageValue;
             }
-            SetPercentage(slotNumber, percentageValue - thisDiffInt);
+            other.Percentage = percentageValue - thisDiffInt;
             diff -= thisDiffInt;
         }
+        
         while (diff > 0)
         {
-            int nonZeroCount = 0;
-            for (int i = 0; i < count; ++i)
-            {
-                int slotNumber = theOtherNumbers[i];
-                int percentageValue = GetPercentage(slotNumber);
-                if (percentageValue != 0)
-                {
-                    ++nonZeroCount;
-                }
-            }
+            int nonZeroCount = otherSlots.Where(otherSlot => otherSlot.Percentage != 0).Count();
+            
             if (nonZeroCount == 0)
             {
                 break;
             }
             if (nonZeroCount == 1)
             {
-                for (int i = 0; i < count; ++i)
+                foreach (SlotsControlSlotData other in otherSlots)
                 {
-                    int slotNumber = theOtherNumbers[i];
-                    int percentageValue = GetPercentage(slotNumber);
+                    int percentageValue = other.Percentage;
                     if (percentageValue != 0)
                     {
-                        SetPercentage(slotNumber, Math.Max(0, percentageValue - diff));
+                        other.Percentage = Math.Max(0, percentageValue - diff);
                         break;
                     }
                 }
                 break;
             }
             
-            bool isFirstHypothetical = true;
             float lowestHypotheticalPercentageChange = 0.0F;
-            int indexOfLowestHypothetical = 0;
-            for (int i = 0; i < count; ++i)
+            SlotsControlSlotData? lowestHypothetical = null;
+            foreach (SlotsControlSlotData other in otherSlots)
             {
-                int startingValue = _otherSlidersStartingValues[i];
-                int slotNumber = theOtherNumbers[i];
-                int percentageValue = GetPercentage(slotNumber);
+                int startingValue = other.StartingValue;
+                int percentageValue = other.Percentage;
                 if (percentageValue == 0 || startingValue == 0) continue;
                 int hypotheticalValue = percentageValue - 1;
                 float hypotheticalPercentageChange = (float)(startingValue - hypotheticalValue) / (float)startingValue;
-                if (isFirstHypothetical
+                if (lowestHypothetical == null
                         || hypotheticalPercentageChange < lowestHypotheticalPercentageChange)
                 {
                     lowestHypotheticalPercentageChange = hypotheticalPercentageChange;
-                    indexOfLowestHypothetical = i;
+                    lowestHypothetical = other;
                 }
-                isFirstHypothetical = false;
             }
             
-            if (isFirstHypothetical) break;
+            if (lowestHypothetical == null) break;
             else
             {
-                int slotNumber = theOtherNumbers[indexOfLowestHypothetical];
-                SetPercentage(slotNumber, Math.Max(0, GetPercentage(slotNumber) - 1));
+                lowestHypothetical.Percentage = Math.Max(0, lowestHypothetical.Percentage - 1);
             }
             
             --diff;
         }
-        
-        for (int i = 0; i < count; ++i)
-        {
-            int slotNumber = theOtherNumbers[i];
-            NotifyPercentageChanged(slotNumber);
-        }
     }
-    private void LimitThisPercentage(int initiatorNumber)
+    private void LimitThisPercentage(int initiatorIndex)
     {
         
         int summary = SumPercentage();
-        int count = TotalUsedSlots();
-        if (count == 1) return;
+        if (TotalUsedSlots() == 1 || SlotsData == null) return;
         if (summary > 100)
         {
             int diff = summary - 100;
-            switch (initiatorNumber)
-            {
-                case 1:
-                    _slot1Percentage -= diff;
-                    OnPropertyChanged("Slot1Percentage");
-                    break;
-                case 2:
-                    _slot2Percentage -= diff;
-                    OnPropertyChanged("Slot2Percentage");
-                    break;
-                case 3:
-                    _slot3Percentage -= diff;
-                    OnPropertyChanged("Slot3Percentage");
-                    break;
-            }
+            SlotsData[initiatorIndex].Percentage -= diff;
         }
     }
     private void ResetLastChangedSlider()
     {
         _lastChangedSlider = -1;
     }
-    private void SetLastChangedSlider(int initiatorNumber)
+    private void SetLastChangedSlider(int initiatorIndex)
     {
-        if (_lastChangedSlider == initiatorNumber) return;
-        _lastChangedSlider = initiatorNumber;
-        int[] theOtherNumbers = new int[3];
-        int count = 0;
-        if (_useSlot1 && initiatorNumber != 1) theOtherNumbers[count++] = 1;
-        if (_useSlot2 && initiatorNumber != 2) theOtherNumbers[count++] = 2;
-        if (_useSlot3 && initiatorNumber != 3) theOtherNumbers[count++] = 3;
-        for (int i = 0; i < count; ++i)
+        if (_lastChangedSlider == initiatorIndex || SlotsData == null) return;
+        _lastChangedSlider = initiatorIndex;
+        foreach (SlotsControlSlotData slot in SlotsData.Slots)
         {
-            int otherValue = 0;
-            switch (theOtherNumbers[i])
+            if (slot.Use && slot.Index != initiatorIndex)
             {
-                case 1:
-                    otherValue = _slot1Percentage;
-                    break;
-                case 2:
-                    otherValue = _slot2Percentage;
-                    break;
-                case 3:
-                    otherValue = _slot3Percentage;
-                    break;
+                slot.StartingValue = slot.Percentage;
             }
-            _otherSlidersStartingValues[i] = otherValue;
         }
     }
+    
 }

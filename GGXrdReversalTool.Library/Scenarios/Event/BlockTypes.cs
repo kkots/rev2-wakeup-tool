@@ -9,6 +9,6 @@ namespace GGXrdReversalTool.Library.Scenarios.Event
         InstantBlock,
         [Description("Faultless Defense")]
         FaultlessDefense,
-        Random
+        Any
     }
 }

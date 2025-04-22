@@ -1,0 +1,247 @@
+﻿<local:NotifiedUserControl x:Class="GGXrdReversalTool.Controls.BlockSwitchingElementControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:GGXrdReversalTool.Controls"
+             xmlns:converters="clr-namespace:GGXrdReversalTool.Converters"
+             x:Name="Control"
+             mc:Ignorable="d" 
+             d:DesignHeight="450" d:DesignWidth="800">
+    <local:NotifiedUserControl.Resources>
+        <ContextMenu x:Key="ContextMenu">
+            <MenuItem Header="_Edit (also available through double-click)" Click="OnEditClick"/>
+            <MenuItem Header="_Delete" Click="OnDeleteClick"/>
+            <MenuItem Header="_Insert new element after this one" Click="OnInsertNewAfterClick"/>
+            <MenuItem Header="Insert new element _before this one" Click="OnInsertNewBeforeClick"/>
+            <MenuItem Header="Move _left" Click="OnMoveLeftClick"/>
+            <MenuItem Header="Move _right" Click="OnMoveRightClick"/>
+        </ContextMenu>
+        <Style x:Key="BorderStyle" TargetType="{x:Type Border}">
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding Interactive}" Value="True">
+                    <Setter Property="ContextMenu" Value="{StaticResource ContextMenu}"/>
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+        <converters:IsSelectedToBrushConverter x:Key="IsSelectedToBrushConverter"/>
+        <DataTemplate x:Key="JustExclamationMark">
+            <Border BorderThickness="2" BorderBrush="{Binding Element.IsSelected, Converter={StaticResource IsSelectedToBrushConverter}}" MouseDown="Border_MouseDown" Style="{StaticResource BorderStyle}">
+                <Image Source="../../Images/BlockSwitching/BlockReversalHit_Icon.png" Width="40" Height="70" ToolTipService.ToolTip="Don't change block type, stance, block switching or block/not block settings.&#10;On this hit play a reversal, if the specified Event on the 'Scenario' tab is 'Blocked a certain hit' and the 'Only on hits from Block Switching tab marked with !' checkbox is checked."/>
+            </Border>
+        </DataTemplate>
+        <DataTemplate x:Key="JustMultiplication">
+            <Border BorderThickness="2" BorderBrush="{Binding Element.IsSelected, Converter={StaticResource IsSelectedToBrushConverter}}" MouseDown="Border_MouseDown" Style="{StaticResource BorderStyle}">
+                <Grid ToolTipService.ToolTip="Don't change block type, stance, block switching or block/not block settings. Just wait out this many blocked hits.">
+                    <Rectangle Fill="Transparent" Width="40" Height="70"/>
+                    <TextBlock Text="{Binding Multiplier}" VerticalAlignment="Center" FontSize="16" Margin="0,0,3,0"/>
+                </Grid>
+            </Border>
+        </DataTemplate>
+        <DataTemplate x:Key="JustExclamationMarkAndMultiplication">
+            <Border BorderThickness="2" BorderBrush="{Binding Element.IsSelected, Converter={StaticResource IsSelectedToBrushConverter}}" MouseDown="Border_MouseDown" Style="{StaticResource BorderStyle}">
+                <StackPanel Orientation="Horizontal" ToolTipService.ToolTip="Don't change block type, stance, block switching or block/not block settings.&#10;On this hit play a reversal, if the specified Event on the 'Scenario' tab is 'Blocked a certain hit' and the 'Only on hits from Block Switching tab marked with !' checkbox is checked.">
+                    <Image Source="../../Images/BlockSwitching/BlockReversalHit_Icon.png" Width="40" Height="70"/>
+                    <TextBlock Text="{Binding Multiplier}" VerticalAlignment="Center" FontSize="16" Margin="0,0,3,0"/>
+                </StackPanel>
+            </Border>
+        </DataTemplate>
+        <DataTemplate x:Key="WithoutExclamationMarkOrMultiplication1">
+            <Border BorderThickness="2" BorderBrush="{Binding Element.IsSelected, Converter={StaticResource IsSelectedToBrushConverter}}" MouseDown="Border_MouseDown" Style="{StaticResource BorderStyle}">
+                <ContentControl Content="{Binding Images[0]}" ToolTipService.ToolTip="{Binding Tooltip}"/>
+            </Border>
+        </DataTemplate>
+        <DataTemplate x:Key="WithoutExclamationMarkOrMultiplication2">
+            <Border BorderThickness="2" BorderBrush="{Binding Element.IsSelected, Converter={StaticResource IsSelectedToBrushConverter}}" MouseDown="Border_MouseDown" Style="{StaticResource BorderStyle}">
+                <Grid>
+                    <ContentControl Content="{Binding Images[0]}"/>
+                    <ContentControl Content="{Binding Images[1]}" ToolTipService.ToolTip="{Binding Tooltip}"/>
+                </Grid>
+            </Border>
+        </DataTemplate>
+        <DataTemplate x:Key="WithoutExclamationMarkOrMultiplication3">
+            <Border BorderThickness="2" BorderBrush="{Binding Element.IsSelected, Converter={StaticResource IsSelectedToBrushConverter}}" MouseDown="Border_MouseDown" Style="{StaticResource BorderStyle}">
+                <Grid>
+                    <ContentControl Content="{Binding Images[0]}"/>
+                    <ContentControl Content="{Binding Images[1]}"/>
+                    <ContentControl Content="{Binding Images[2]}" ToolTipService.ToolTip="{Binding Tooltip}"/>
+                </Grid>
+            </Border>
+        </DataTemplate>
+        <DataTemplate x:Key="WithoutExclamationMarkButWithMultiplication1">
+            <Border BorderThickness="2" BorderBrush="{Binding Element.IsSelected, Converter={StaticResource IsSelectedToBrushConverter}}" MouseDown="Border_MouseDown" Style="{StaticResource BorderStyle}">
+                <StackPanel Orientation="Horizontal" ToolTipService.ToolTip="{Binding Tooltip}">
+                    <ContentControl Content="{Binding Images[0]}"/>
+                    <TextBlock Text="{Binding Multiplier}" VerticalAlignment="Center" FontSize="16" Margin="0,0,3,0"/>
+                </StackPanel>
+            </Border>
+        </DataTemplate>
+        <DataTemplate x:Key="WithoutExclamationMarkButWithMultiplication2">
+            <Border BorderThickness="2" BorderBrush="{Binding Element.IsSelected, Converter={StaticResource IsSelectedToBrushConverter}}" MouseDown="Border_MouseDown" Style="{StaticResource BorderStyle}">
+                <StackPanel Orientation="Horizontal" ToolTipService.ToolTip="{Binding Tooltip}">
+                    <Grid>
+                        <ContentControl Content="{Binding Images[0]}"/>
+                        <ContentControl Content="{Binding Images[1]}"/>
+                    </Grid>
+                    <TextBlock Text="{Binding Multiplier}" VerticalAlignment="Center" FontSize="16" Margin="0,0,3,0"/>
+                </StackPanel>
+            </Border>
+        </DataTemplate>
+        <DataTemplate x:Key="WithoutExclamationMarkButWithMultiplication3">
+            <Border BorderThickness="2" BorderBrush="{Binding Element.IsSelected, Converter={StaticResource IsSelectedToBrushConverter}}" MouseDown="Border_MouseDown" Style="{StaticResource BorderStyle}">
+                <StackPanel Orientation="Horizontal" ToolTipService.ToolTip="{Binding Tooltip}">
+                    <Grid>
+                        <ContentControl Content="{Binding Images[0]}"/>
+                        <ContentControl Content="{Binding Images[1]}"/>
+                        <ContentControl Content="{Binding Images[2]}"/>
+                    </Grid>
+                    <TextBlock Text="{Binding Multiplier}" VerticalAlignment="Center" FontSize="16" Margin="0,0,3,0"/>
+                </StackPanel>
+            </Border>
+        </DataTemplate>
+        <DataTemplate x:Key="WithExclamationMarkButWithoutMultiplication1">
+            <Border BorderThickness="2" BorderBrush="{Binding Element.IsSelected, Converter={StaticResource IsSelectedToBrushConverter}}" MouseDown="Border_MouseDown" Style="{StaticResource BorderStyle}">
+                <Grid>
+                    <ContentControl Content="{Binding Images[0]}"/>
+                    <Image Source="../../Images/BlockSwitching/BlockReversalHit_Icon.png" Width="40" Height="70" HorizontalAlignment="Left" ToolTipService.ToolTip="{Binding Tooltip}"/>
+                </Grid>
+            </Border>
+        </DataTemplate>
+        <DataTemplate x:Key="WithExclamationMarkButWithoutMultiplication2">
+            <Border BorderThickness="2" BorderBrush="{Binding Element.IsSelected, Converter={StaticResource IsSelectedToBrushConverter}}" MouseDown="Border_MouseDown" Style="{StaticResource BorderStyle}">
+                <Grid>
+                    <ContentControl Content="{Binding Images[0]}"/>
+                    <ContentControl Content="{Binding Images[1]}"/>
+                    <Image Source="../../Images/BlockSwitching/BlockReversalHit_Icon.png" Width="40" Height="70" HorizontalAlignment="Left" ToolTipService.ToolTip="{Binding Tooltip}"/>
+                </Grid>
+            </Border>
+        </DataTemplate>
+        <DataTemplate x:Key="WithExclamationMarkButWithoutMultiplication3">
+            <Border BorderThickness="2" BorderBrush="{Binding Element.IsSelected, Converter={StaticResource IsSelectedToBrushConverter}}" MouseDown="Border_MouseDown" Style="{StaticResource BorderStyle}">
+                <Grid>
+                    <ContentControl Content="{Binding Images[0]}"/>
+                    <ContentControl Content="{Binding Images[1]}"/>
+                    <ContentControl Content="{Binding Images[2]}"/>
+                    <Image Source="../../Images/BlockSwitching/BlockReversalHit_Icon.png" Width="40" Height="70" HorizontalAlignment="Left" ToolTipService.ToolTip="{Binding Tooltip}"/>
+                </Grid>
+            </Border>
+        </DataTemplate>
+        <DataTemplate x:Key="WithExclamationMarkAndMultiplication1">
+            <Border BorderThickness="2" BorderBrush="{Binding Element.IsSelected, Converter={StaticResource IsSelectedToBrushConverter}}" MouseDown="Border_MouseDown" Style="{StaticResource BorderStyle}">
+                <StackPanel Orientation="Horizontal" ToolTipService.ToolTip="{Binding Tooltip}">
+                    <Grid>
+                        <ContentControl Content="{Binding Images[0]}"/>
+                        <Image Source="../../Images/BlockSwitching/BlockReversalHit_Icon.png" Width="40" Height="70" HorizontalAlignment="Left"/>
+                    </Grid>
+                    <TextBlock Text="{Binding Multiplier}" VerticalAlignment="Center" FontSize="16" Margin="0,0,3,0"/>
+                </StackPanel>
+            </Border>
+        </DataTemplate>
+        <DataTemplate x:Key="WithExclamationMarkAndMultiplication2">
+            <Border BorderThickness="2" BorderBrush="{Binding Element.IsSelected, Converter={StaticResource IsSelectedToBrushConverter}}" MouseDown="Border_MouseDown" Style="{StaticResource BorderStyle}">
+                <StackPanel Orientation="Horizontal" ToolTipService.ToolTip="{Binding Tooltip}">
+                    <Grid>
+                        <ContentControl Content="{Binding Images[0]}"/>
+                        <ContentControl Content="{Binding Images[1]}"/>
+                        <Image Source="../../Images/BlockSwitching/BlockReversalHit_Icon.png" Width="40" Height="70" HorizontalAlignment="Left"/>
+                    </Grid>
+                    <TextBlock Text="{Binding Multiplier}" VerticalAlignment="Center" FontSize="16" Margin="0,0,3,0"/>
+                </StackPanel>
+            </Border>
+        </DataTemplate>
+        <DataTemplate x:Key="WithExclamationMarkAndMultiplication3">
+            <Border BorderThickness="2" BorderBrush="{Binding Element.IsSelected, Converter={StaticResource IsSelectedToBrushConverter}}" MouseDown="Border_MouseDown" Style="{StaticResource BorderStyle}">
+                <StackPanel Orientation="Horizontal" ToolTipService.ToolTip="{Binding Tooltip}">
+                    <Grid>
+                        <ContentControl Content="{Binding Images[0]}"/>
+                        <ContentControl Content="{Binding Images[1]}"/>
+                        <ContentControl Content="{Binding Images[2]}"/>
+                        <Image Source="../../Images/BlockSwitching/BlockReversalHit_Icon.png" Width="40" Height="70" HorizontalAlignment="Left"/>
+                    </Grid>
+                    <TextBlock Text="{Binding Multiplier}" VerticalAlignment="Center" FontSize="16" Margin="0,0,3,0"/>
+                </StackPanel>
+            </Border>
+        </DataTemplate>
+        <DataTemplate x:Key="EmptyTemplate">
+            <Border BorderThickness="2" BorderBrush="{Binding Element.IsSelected, Converter={StaticResource IsSelectedToBrushConverter}}" MouseDown="Border_MouseDown" Style="{StaticResource BorderStyle}">
+                <Rectangle Fill="Transparent" Width="40" Height="70" ToolTipService.ToolTip="Don't change any settings on this hit."/>
+            </Border>
+        </DataTemplate>
+        <local:BlockSwitchingElementTemplateSelector x:Key="BlockSwitchingElementTemplateSelector"
+            JustExclamationMark="{StaticResource JustExclamationMark}"
+            JustMultiplication="{StaticResource JustMultiplication}"
+            JustExclamationMarkAndMultiplication="{StaticResource JustExclamationMarkAndMultiplication}"
+            WithoutExclamationMarkOrMultiplication1="{StaticResource WithoutExclamationMarkOrMultiplication1}"
+            WithoutExclamationMarkOrMultiplication2="{StaticResource WithoutExclamationMarkOrMultiplication2}"
+            WithoutExclamationMarkOrMultiplication3="{StaticResource WithoutExclamationMarkOrMultiplication3}"
+            WithoutExclamationMarkButWithMultiplication1="{StaticResource WithoutExclamationMarkButWithMultiplication1}"
+            WithoutExclamationMarkButWithMultiplication2="{StaticResource WithoutExclamationMarkButWithMultiplication2}"
+            WithoutExclamationMarkButWithMultiplication3="{StaticResource WithoutExclamationMarkButWithMultiplication3}"
+            WithExclamationMarkButWithoutMultiplication1="{StaticResource WithExclamationMarkButWithoutMultiplication1}"
+            WithExclamationMarkButWithoutMultiplication2="{StaticResource WithExclamationMarkButWithoutMultiplication2}"
+            WithExclamationMarkButWithoutMultiplication3="{StaticResource WithExclamationMarkButWithoutMultiplication3}"
+            WithExclamationMarkAndMultiplication1="{StaticResource WithExclamationMarkAndMultiplication1}"
+            WithExclamationMarkAndMultiplication2="{StaticResource WithExclamationMarkAndMultiplication2}"
+            WithExclamationMarkAndMultiplication3="{StaticResource WithExclamationMarkAndMultiplication3}"
+            EmptyTemplate="{StaticResource EmptyTemplate}"
+        />
+        <Image x:Shared="false" x:Key="BlockNormalStandingIcon" Source="../../Images/BlockSwitching/BlockNormalStanding_Icon.png" Width="40" Height="70"/>
+        <Image x:Shared="false" x:Key="BlockIBStandingIcon" Source="../../Images/BlockSwitching/BlockIBStanding_Icon.png" Width="40" Height="70"/>
+        <Image x:Shared="false" x:Key="BlockFDStandingIcon" Source="../../Images/BlockSwitching/BlockFDStanding_Icon.png" Width="40" Height="70"/>
+        <Image x:Shared="false" x:Key="BlockPinStandingIcon" Source="../../Images/BlockSwitching/BlockPinStanding_Icon.png" Width="40" Height="70"/>
+        <Image x:Shared="false" x:Key="BlockRandomStandingIcon" Source="../../Images/BlockSwitching/BlockRandomStanding_Icon.png" Width="40" Height="70"/>
+        <Image x:Shared="false" x:Key="BlockGamesOwnImplementationOfRandomStandingIcon" Source="../../Images/BlockSwitching/BlockGamesOwnImplementationOfRandomStanding_Icon.png" Width="40" Height="70"/>
+        <Image x:Shared="false" x:Key="BlockNormalCrouchingIcon" Source="../../Images/BlockSwitching/BlockNormalCrouching_Icon.png" Width="40" Height="70"/>
+        <Image x:Shared="false" x:Key="BlockIBCrouchingIcon" Source="../../Images/BlockSwitching/BlockIBCrouching_Icon.png" Width="40" Height="70"/>
+        <Image x:Shared="false" x:Key="BlockFDCrouchingIcon" Source="../../Images/BlockSwitching/BlockFDCrouching_Icon.png" Width="40" Height="70"/>
+        <Image x:Shared="false" x:Key="BlockPinCrouchingIcon" Source="../../Images/BlockSwitching/BlockPinCrouching_Icon.png" Width="40" Height="70"/>
+        <Image x:Shared="false" x:Key="BlockRandomCrouchingIcon" Source="../../Images/BlockSwitching/BlockRandomCrouching_Icon.png" Width="40" Height="70"/>
+        <Image x:Shared="false" x:Key="BlockGamesOwnImplementationOfRandomCrouchingIcon" Source="../../Images/BlockSwitching/BlockGamesOwnImplementationOfRandomCrouching_Icon.png" Width="40" Height="70"/>
+        <Image x:Shared="false" x:Key="BlockNormalPinIcon" Source="../../Images/BlockSwitching/BlockNormalPin_Icon.png" Width="40" Height="70"/>
+        <Image x:Shared="false" x:Key="BlockIBPinIcon" Source="../../Images/BlockSwitching/BlockIBPin_Icon.png" Width="40" Height="70"/>
+        <Image x:Shared="false" x:Key="BlockFDPinIcon" Source="../../Images/BlockSwitching/BlockFDPin_Icon.png" Width="40" Height="70"/>
+        <Image x:Shared="false" x:Key="BlockPinPinIcon" Source="../../Images/BlockSwitching/BlockPinPin_Icon.png" Width="40" Height="70"/>
+        <Image x:Shared="false" x:Key="BlockRandomPinIcon" Source="../../Images/BlockSwitching/BlockRandomPin_Icon.png" Width="40" Height="70"/>
+        <Image x:Shared="false" x:Key="BlockGamesOwnImplementationOfRandomPinIcon" Source="../../Images/BlockSwitching/BlockGamesOwnImplementationOfRandomPin_Icon.png" Width="40" Height="70"/>
+        <Image x:Shared="false" x:Key="BlockNormalRandomIcon" Source="../../Images/BlockSwitching/BlockNormalRandom_Icon.png" Width="40" Height="70"/>
+        <Image x:Shared="false" x:Key="BlockIBRandomIcon" Source="../../Images/BlockSwitching/BlockIBRandom_Icon.png" Width="40" Height="70"/>
+        <Image x:Shared="false" x:Key="BlockFDRandomIcon" Source="../../Images/BlockSwitching/BlockFDRandom_Icon.png" Width="40" Height="70"/>
+        <Image x:Shared="false" x:Key="BlockPinRandomIcon" Source="../../Images/BlockSwitching/BlockPinRandom_Icon.png" Width="40" Height="70"/>
+        <Image x:Shared="false" x:Key="BlockRandomRandomIcon" Source="../../Images/BlockSwitching/BlockRandomRandom_Icon.png" Width="40" Height="70"/>
+        <Image x:Shared="false" x:Key="BlockGamesOwnImplementationOfRandomRandomIcon" Source="../../Images/BlockSwitching/BlockGamesOwnImplementationOfRandomRandom_Icon.png" Width="40" Height="70"/>
+        <Image x:Shared="false" x:Key="BlockNormalOppositeIcon" Source="../../Images/BlockSwitching/BlockNormalOpposite_Icon.png" Width="40" Height="70"/>
+        <Image x:Shared="false" x:Key="BlockIBOppositeIcon" Source="../../Images/BlockSwitching/BlockIBOpposite_Icon.png" Width="40" Height="70"/>
+        <Image x:Shared="false" x:Key="BlockFDOppositeIcon" Source="../../Images/BlockSwitching/BlockFDOpposite_Icon.png" Width="40" Height="70"/>
+        <Image x:Shared="false" x:Key="BlockPinOppositeIcon" Source="../../Images/BlockSwitching/BlockPinOpposite_Icon.png" Width="40" Height="70"/>
+        <Image x:Shared="false" x:Key="BlockRandomOppositeIcon" Source="../../Images/BlockSwitching/BlockRandomOpposite_Icon.png" Width="40" Height="70"/>
+        <Image x:Shared="false" x:Key="BlockGamesOwnImplementationOfRandomOppositeIcon" Source="../../Images/BlockSwitching/BlockGamesOwnImplementationOfRandomOpposite_Icon.png" Width="40" Height="70"/>
+        <Image x:Shared="false" x:Key="BlockNormalJumpingIcon" Source="../../Images/BlockSwitching/BlockNormalJumping_Icon.png" Width="40" Height="70"/>
+        <Image x:Shared="false" x:Key="BlockIBJumpingIcon" Source="../../Images/BlockSwitching/BlockIBJumping_Icon.png" Width="40" Height="70"/>
+        <Image x:Shared="false" x:Key="BlockFDJumpingIcon" Source="../../Images/BlockSwitching/BlockFDJumping_Icon.png" Width="40" Height="70"/>
+        <Image x:Shared="false" x:Key="BlockPinJumpingIcon" Source="../../Images/BlockSwitching/BlockPinJumping_Icon.png" Width="40" Height="70"/>
+        <Image x:Shared="false" x:Key="BlockRandomJumpingIcon" Source="../../Images/BlockSwitching/BlockRandomJumping_Icon.png" Width="40" Height="70"/>
+        <Image x:Shared="false" x:Key="BlockGamesOwnImplementationOfRandomJumpingIcon" Source="../../Images/BlockSwitching/BlockGamesOwnImplementationOfRandomJumping_Icon.png" Width="40" Height="70"/>
+        <Image x:Shared="false" x:Key="BlockStandingIcon" Source="../../Images/BlockSwitching/BlockStanding_Icon.png" Width="40" Height="70"/>
+        <Image x:Shared="false" x:Key="BlockCrouchingIcon" Source="../../Images/BlockSwitching/BlockCrouching_Icon.png" Width="40" Height="70"/>
+        <Image x:Shared="false" x:Key="BlockPinStanceIcon" Source="../../Images/BlockSwitching/BlockPin_Stance_Icon.png" Width="40" Height="70"/>
+        <Image x:Shared="false" x:Key="BlockRandomStanceIcon" Source="../../Images/BlockSwitching/BlockRandom_Stance_Icon.png" Width="40" Height="70"/>
+        <Image x:Shared="false" x:Key="BlockOppositeIcon" Source="../../Images/BlockSwitching/BlockOpposite_Icon.png" Width="40" Height="70"/>
+        <Image x:Shared="false" x:Key="BlockJumpingIcon" Source="../../Images/BlockSwitching/BlockJumping_Icon.png" Width="40" Height="70"/>
+        <Image x:Shared="false" x:Key="BlockNormalIcon" Source="../../Images/BlockSwitching/BlockNormal_Icon.png" Width="40" Height="70"/>
+        <Image x:Shared="false" x:Key="BlockIBIcon" Source="../../Images/BlockSwitching/BlockIB_Icon.png" Width="40" Height="70"/>
+        <Image x:Shared="false" x:Key="BlockFDIcon" Source="../../Images/BlockSwitching/BlockFD_Icon.png" Width="40" Height="70"/>
+        <Image x:Shared="false" x:Key="BlockPinBlockIcon" Source="../../Images/BlockSwitching/BlockPin_Block_Icon.png" Width="40" Height="70"/>
+        <Image x:Shared="false" x:Key="BlockRandomBlockIcon" Source="../../Images/BlockSwitching/BlockRandom_Block_Icon.png" Width="40" Height="70"/>
+        <Image x:Shared="false" x:Key="BlockGamesOwnImplementationOfRandomIcon" Source="../../Images/BlockSwitching/BlockGamesOwnImplementationOfRandom_Icon.png" Width="40" Height="70"/>
+        <Image x:Shared="false" x:Key="BlockNotBlockIcon" Source="../../Images/BlockSwitching/BlockNotBlock_Icon.png" Width="40" Height="70"/>
+        <Image x:Shared="false" x:Key="BlockEverythingIcon" Source="../../Images/BlockSwitching/BlockEverything_Icon.png" Width="40" Height="70"/>
+        <Image x:Shared="false" x:Key="BlockAfterFirstIcon" Source="../../Images/BlockSwitching/BlockAfterFirst_Icon.png" Width="40" Height="70"/>
+        <Image x:Shared="false" x:Key="BlockFirstOnlyIcon" Source="../../Images/BlockSwitching/BlockFirstOnly_Icon.png" Width="40" Height="70"/>
+        <Image x:Shared="false" x:Key="BlockRandomSettingsIcon" Source="../../Images/BlockSwitching/BlockRandom_Settings_Icon.png" Width="40" Height="70"/>
+        <Image x:Shared="false" x:Key="BlockPinSettingsIcon" Source="../../Images/BlockSwitching/BlockPin_Settings_Icon.png" Width="40" Height="70"/>
+        <Image x:Shared="false" x:Key="BlockOffIcon" Source="../../Images/BlockSwitching/BlockOff_Icon.png" Width="40" Height="70"/>
+        <Image x:Shared="false" x:Key="BlockOnIcon" Source="../../Images/BlockSwitching/BlockOn_Icon.png" Width="40" Height="70"/>
+        <Image x:Shared="false" x:Key="BlockOnSecondIcon" Source="../../Images/BlockSwitching/BlockOnSecond_Icon.png" Width="40" Height="70"/>
+    </local:NotifiedUserControl.Resources>
+    <ContentControl Content="{Binding ElementName=Control, Path=DataForTemplateSelector}" ContentTemplateSelector="{StaticResource BlockSwitchingElementTemplateSelector}"/>
+</local:NotifiedUserControl>

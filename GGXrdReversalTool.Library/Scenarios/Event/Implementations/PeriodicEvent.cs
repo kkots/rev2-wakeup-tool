@@ -13,7 +13,7 @@ public class PeriodicEvent : IScenarioEvent
     public IMemoryReader? MemoryReader { get; set; }
     public bool IsValid => MinDelay <= MaxDelay;
     private void resetCounter() => _counter = _random.Next(MinDelay, MaxDelay + 1) - 1;
-    public int FramesUntilEvent(int inputReversalFrame, bool isUserControllingDummy)
+    public int FramesUntilEvent(bool isUserControllingDummy)
     {
         if (MemoryReader is null)
             return int.MaxValue;
@@ -43,13 +43,14 @@ public class PeriodicEvent : IScenarioEvent
         {
             --_counter;
         }
-        return Math.Max(0, counterCurrent - inputReversalFrame);
+        return Math.Max(0, counterCurrent);
     }
     public bool CanEnable(IScenarioAction action, int slotNumber)
     {
         return action.Inputs[slotNumber - 1].IsReversalValid && IsValid;
     }
     public bool DependsOnReversalFrame() => true;
+    public void Init() => OnStageReset();
     public void OnStageReset() => resetCounter();
 
 }

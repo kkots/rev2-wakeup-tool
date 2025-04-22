@@ -1,10 +1,10 @@
-﻿using System.Windows;
+﻿using GGXrdReversalTool.ViewModels;
+using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
 
 namespace GGXrdReversalTool.Controls;
 
-public partial class SlotsControl : UserControl
+public partial class SlotsControl : NotifiedUserControl
 {
     public SlotsControl()
     {
@@ -13,84 +13,63 @@ public partial class SlotsControl : UserControl
 
 
     #region SlotNumber Property
-
+    
+    // This property is separate from ControlData.SlotNumber so that it can be bound to
     public int SlotNumber
     {
         get => (int)GetValue(SlotNumberProperty);
         set => SetValue(SlotNumberProperty, value);
     }
-
-    // Using a DependencyProperty as the backing store for SlotNumber.  This enables animation, styling, binding, etc...
     public static readonly DependencyProperty SlotNumberProperty =
         DependencyProperty.Register(nameof(SlotNumber), typeof(int), typeof(SlotsControl),
-            new FrameworkPropertyMetadata(1, OnSlotNumberPropertyChanged, OnCoerceSlotNumberProperty)
+            new PropertyMetadata(1));
+    
+    private void OnRadioButtonChecked(object sender, RoutedEventArgs e)
+    {
+        if (ControlData == null) return;
+        
+        RadioButton checkbox = (RadioButton)sender;
+        int index = (int)checkbox.Tag;
+        
+        foreach (SlotsControlSlotData slot in ControlData.Slots)
+        {
+            if (slot.Index != index)
             {
-                BindsTwoWayByDefault = true, DefaultUpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged
-            });
-
-    private static object OnCoerceSlotNumberProperty(DependencyObject source, object baseValue)
-    {
-        if (baseValue is not int value)
-        {
-            return SlotNumberProperty.DefaultMetadata.DefaultValue;
-        }
-
-        switch (value)
-        {
-            case 1:
-            case 2:
-            case 3:
-                return value;
-
-        }
-
-        return SlotNumberProperty.DefaultMetadata.DefaultValue;
-    }
-
-    private static void OnSlotNumberPropertyChanged(DependencyObject source,
-        DependencyPropertyChangedEventArgs eventArgs)
-    {
-        if (source is not SlotsControl control)
-        {
-            return;
+                slot.IsChecked = false;
+            }
         }
         
-        var value = (int)eventArgs.NewValue;
-
-        switch (value)
-        {
-            case 1:
-                control.RadioButton1.IsChecked = true;
-                break;
-            case 2:
-                control.RadioButton2.IsChecked = true;
-                break;
-            case 3:
-                control.RadioButton3.IsChecked = true;
-                break;
-        }
-
-
-
-    }
-
-    private void RadioButton1_Checked(object sender, RoutedEventArgs e)
-    {
-        SlotNumber = 1;
-    }
-
-    private void RadioButton2_Checked(object sender, RoutedEventArgs e)
-    {
-        SlotNumber = 2;
-    }
-
-    private void RadioButton3_Checked(object sender, RoutedEventArgs e)
-    {
-        SlotNumber = 3;
+        SlotNumber = ControlData.SlotNumber = index + 1;
     }
 
     #endregion
-
+    
+    public SlotsControlData? ControlData
+    {
+        get => (SlotsControlData?)GetValue(ControlDataProperty);
+        set => SetValue(ControlDataProperty, value);
+    }
+    
+    public static readonly DependencyProperty ControlDataProperty =
+        DependencyProperty.Register(nameof(ControlData), typeof(SlotsControlData), typeof(SlotsControl),
+            new PropertyMetadata(null, OnControlDataPropertyChanged));
+    
+    public static void OnControlDataPropertyChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    {
+        SlotsControl control = (SlotsControl)d;
+        if (control.ControlData != null)
+        {
+            control.SlotNumber = control.ControlData.SlotNumber;
+        }
+        control.OnPropertyChanged("NumberOfSlots");
+        control.OnPropertyChanged("RemoveSlotButtonVisible");
+    }
+    
+    public int NumberOfSlots
+    {
+        get => ControlData?.Slots.Count ?? 0;
+    }
+    
     #region GroupName Property
 
 
@@ -107,4 +86,31 @@ public partial class SlotsControl : UserControl
 
 
     #endregion
+    
+    public Visibility RemoveSlotButtonVisible
+    {
+        get => NumberOfSlots > 3 ? Visibility.Visible : Visibility.Hidden;
+    }
+    
+    private void OnAddSlotClick(object sender, RoutedEventArgs e)
+    {
+        if (ControlData == null) return;
+        ControlData.AddSlotAt(ControlData.Slots.Count);
+        SlotNumber = -1;
+        SlotNumber = ControlData.SlotNumber;
+        OnPropertyChanged("NumberOfSlots");
+        OnPropertyChanged("RemoveSlotButtonVisible");
+    }
+    
+    private void OnRemoveSlotClick(object sender, RoutedEventArgs e)
+    {
+        if (ControlData == null) return;
+        ControlData.RemoveSlotAt(SlotNumber - 1);
+        SlotNumber = -1;
+        SlotNumber = ControlData.SlotNumber;
+        OnPropertyChanged("NumberOfSlots");
+        OnPropertyChanged("RemoveSlotButtonVisible");
+        
+    }
+    
 }

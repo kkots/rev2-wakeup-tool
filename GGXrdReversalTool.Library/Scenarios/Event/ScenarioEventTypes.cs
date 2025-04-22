@@ -10,5 +10,7 @@ public enum ScenarioEventTypes
     SimulatedRoundstart,
     [Description("Delay air recovery")]
     DelayAirRecovery,
-    Periodically
+    Periodically,
+    [Description("Blocked a certain hit")]
+    BlockedACertainHit
 }
