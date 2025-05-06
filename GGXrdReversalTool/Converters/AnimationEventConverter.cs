@@ -15,9 +15,17 @@ public class AnimationEventConverter : IMultiValueConverter
         var shouldCheckAirTech = (bool)values[2];
         var shouldCheckStartBlocking = (bool)values[3];
         var shouldCheckBlockstunEnding = (bool)values[4];
+        var shouldCheckHitstunStarting = (bool)values[5];
+        var shouldCheckHitstunEnding = (bool)values[6];
 
 
-        if (!shouldCheckWakingUp && !shouldCheckWallSplat && !shouldCheckAirTech && !shouldCheckStartBlocking && !shouldCheckBlockstunEnding)
+        if (!shouldCheckWakingUp
+                && !shouldCheckWallSplat
+                && !shouldCheckAirTech
+                && !shouldCheckStartBlocking
+                && !shouldCheckBlockstunEnding
+                && !shouldCheckHitstunStarting
+                && !shouldCheckHitstunEnding)
         {
             return "Event is invalid!!!";
         }
@@ -30,14 +38,16 @@ public class AnimationEventConverter : IMultiValueConverter
             shouldCheckWallSplat ? "recovers from wall splat" : "",
             shouldCheckAirTech ? "recovers from air tech" : "",
             shouldCheckStartBlocking ? "is starting to block" : "",
-            shouldCheckBlockstunEnding ? "stops blocking" : ""
+            shouldCheckBlockstunEnding ? "stops blocking" : "",
+            shouldCheckHitstunStarting ? "enters hitstun" : "",
+            shouldCheckHitstunEnding ? "recovers from hitstun" : ""
             
         };
 
         var result = "Dummy ";
 
 
-        result += events.Where(evt => !string.IsNullOrEmpty(evt)).Aggregate((a, b) => $"{a} or {b}");
+        result += string.Join(" or ", events.Where(evt => !string.IsNullOrEmpty(evt)));
         
 
         return result;

@@ -1,21 +1,21 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
 using System.Windows;
 using GGXrdReversalTool.Commands;
+using GGXrdReversalTool.Controls;
 using GGXrdReversalTool.Library.Configuration;
 using GGXrdReversalTool.Library.Logging;
 using GGXrdReversalTool.Library.Memory;
 using GGXrdReversalTool.Library.Memory.Implementations;
-using GGXrdReversalTool.Library.Models;
 using GGXrdReversalTool.Library.Models.Inputs;
 using GGXrdReversalTool.Library.Scenarios;
-using GGXrdReversalTool.Library.Scenarios.Action;
-using GGXrdReversalTool.Library.Scenarios.Event;
+using GGXrdReversalTool.Library.Scenarios.BlockSwitching;
 using GGXrdReversalTool.Library.Scenarios.Event.Implementations;
-using GGXrdReversalTool.Library.Scenarios.Frequency;
 using GGXrdReversalTool.Updates;
 using Microsoft.Win32;
 
@@ -27,9 +27,11 @@ public class ScenarioWindowViewModel : ViewModelBase
     private readonly IMemoryReader _memoryReader = null!;
     private readonly StringBuilder _logStringBuilder = new();
     private Scenario? _scenario;
-    public IScenarioEvent? ScenarioEvent { get; set; }
-    public IScenarioAction? ScenarioAction { get; set; }
-    public IScenarioFrequency? ScenarioFrequency { get; set; }
+    public ObservableCollection<EventTabElement> EventTabs { get; set; } = new ObservableCollection<EventTabElement>();
+    public IScenarioBlockSwitching? ScenarioBlockSwitching { get; set; } = null;
+    public EventTabElement? SelectedEventTab { get; set; } = null;
+    public int BlockTimer { get; set; } = 30;
+    public RelayCommand<BlockSwitchingControl>? ApplySuggestionCommand { get; set; } = null;
 
     public ScenarioWindowViewModel()
     {
@@ -203,18 +205,88 @@ public class ScenarioWindowViewModel : ViewModelBase
 
     public RelayCommand EnableCommand => new(Enable, CanEnable);
 
-    private void Enable()
+    private int[] GetFrequencyUsedSlots(EventTabElement eventElem)
     {
-        ScenarioAction!.SlotNumber = SlotNumber;
-        int[] usedSlots = ScenarioFrequency!.UsedSlotNumbers();
+        int[] usedSlots = eventElem.ScenarioFrequency!.UsedSlotNumbers();
         if (usedSlots.Length == 1 && usedSlots[0] == -1)
         {
-            usedSlots[0] = _slotNumber;
+            usedSlots[0] = eventElem.SlotsData.SlotNumber;
         }
-        _scenario = new Scenario(_memoryReader, ScenarioEvent!, ScenarioAction,
-            _slotNumber,
-            usedSlots,
-            ScenarioFrequency!);
+        return usedSlots;
+    }
+    
+    private void Enable()
+    {
+        
+        IList<string> delayAirRecoveryEventNames = new List<string>();
+        foreach (EventTabElement eventElem in EventTabs)
+        {
+            if (eventElem.Index == -1) continue;
+            if (eventElem.ScenarioEvent is null)
+            {
+                MessageBox.Show($"Event type not specified in {eventElem.TabName}.");
+                return;
+            }
+            if (eventElem.ScenarioEvent is DelayAirRecoveryEvent)
+                delayAirRecoveryEventNames.Add(eventElem.TabName);
+    
+            if (eventElem.ScenarioAction is null)
+            {
+                MessageBox.Show($"Action not specified in {eventElem.TabName}.");
+                return;
+            }
+    
+            if (eventElem.ScenarioFrequency is null)
+            {
+                MessageBox.Show("Probability of the reversal happening was not specified in the 'How often?' panel"
+                       + $" in {eventElem.TabName}.");
+                return;
+            }
+            
+            foreach (int slotNumber in GetFrequencyUsedSlots(eventElem))
+            {
+                if (!eventElem.ScenarioEvent.IsValid)
+                {
+                    MessageBox.Show($"There is some invalid or incomplete input in {eventElem.TabName},"
+                        + " please check the properties under the 'When' panel on the left.");
+                    return;
+                }
+                if (!eventElem.ScenarioEvent.CanEnable(eventElem.ScenarioAction, slotNumber))
+                {
+                    MessageBox.Show($"There is some invalid or incomplete input in {eventElem.TabName}'s"
+                        + $" Slot {slotNumber} (see tooltips inside '!','?' icons under the 'Action to perform' panel;"
+                        + " could also be incorrect parameters for the event, see the 'When' panel on the left).");
+                    return;
+                }
+            }
+        }
+        
+        if (delayAirRecoveryEventNames.Count() > 1)
+        {
+            MessageBox.Show("Unfortunately, it is not possible to use multiple 'Delay air recovery' events simultaneously ("
+                + string.Join(", ", delayAirRecoveryEventNames) + ").");
+            return;
+        }
+        
+        foreach (EventTabElement eventElem in EventTabs)
+        {
+            if (eventElem.Index == -1) continue;
+            eventElem.ScenarioAction!.SlotNumber = _slotNumber;
+        }
+        
+        _scenario = new Scenario(_memoryReader,
+            EventTabs
+                .Where(eventElem => eventElem.Index != -1)
+                .Select(eventElem => new ScenarioElement(
+                    eventElem.ScenarioEvent!,
+                    eventElem.ScenarioAction!,
+                    eventElem.ScenarioFrequency!,
+                    GetFrequencyUsedSlots(eventElem)
+                )
+            ).ToArray(),
+            ScenarioBlockSwitching,
+            BlockTimer
+        );
         
         _scenario.Run();
         
@@ -223,27 +295,7 @@ public class ScenarioWindowViewModel : ViewModelBase
 
     private bool CanEnable()
     {
-        if (_scenario is {IsRunning: true})
-        {
-            return false;
-        }
-
-        if (ScenarioEvent is null)
-        {
-            return false;
-        }
-
-        if (ScenarioAction is null)
-        {
-            return false;
-        }
-
-        if (ScenarioFrequency is null)
-        {
-            return false;
-        }
-        
-        return ScenarioEvent.CanEnable(ScenarioAction);
+        return !(_scenario is {IsRunning: true});
     }
 
     #endregion
@@ -347,4 +399,47 @@ public class ScenarioWindowViewModel : ViewModelBase
 
 
     #endregion
+    
+    public void ActionControl_ImportExportSlot(Controls.ImportExportSlotEventArgs e)
+    {
+        if (e.IsImport)
+        {
+            ActionControl_ImportSlot(e.SlotNumber);
+        }
+        else
+        {
+            ActionControl_ExportSlot(e.RawInputText, e.SlotNumber);
+        }
+    }
+    
+    private void ActionControl_ImportSlot(int slotNumber)
+    {
+        if (SelectedEventTab == null) return;
+        var slotInput = _memoryReader.ReadInputFromSlot(slotNumber);
+
+        if (slotInput.IsValid)
+        {
+            SelectedEventTab.SlotsData.CurrentSlot.Text = slotInput.CondensedInputText;
+        }
+        else
+        {
+            MessageBox.Show("Inputs are invalid!");
+        }
+    }
+    
+    private void ActionControl_ExportSlot(string rawInputText, int slotNumber)
+    {
+        if (SelectedEventTab == null) return;
+        
+        var slotInput = new SlotInput(SelectedEventTab.SlotsData.CurrentSlot.Text);
+
+        if (slotInput.IsValid && _memoryReader.WriteInputInSlot(slotNumber, slotInput))
+        {
+            MessageBox.Show($"In-game slot {slotNumber} has been overwritten successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+        else
+        {
+            MessageBox.Show("Failed to export inputs!", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+    }
 }

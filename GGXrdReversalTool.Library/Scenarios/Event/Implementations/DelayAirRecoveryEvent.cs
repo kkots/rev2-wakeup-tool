@@ -1,11 +1,12 @@
 ﻿using GGXrdReversalTool.Library.Memory;
+using GGXrdReversalTool.Library.Models;
 using GGXrdReversalTool.Library.Scenarios.Action;
 
 namespace GGXrdReversalTool.Library.Scenarios.Event.Implementations;
 
 public class DelayAirRecoveryEvent : IScenarioEvent
 {
-    private int _oldAirRecoverySetting = -1;
+    private RecoveryValues? _oldAirRecoverySetting = null;
     public int MaxDelay { get; set; } = 20;
     public int MinDelay { get; set; } = 5;
     public AirRecoveryTypes AirRecoveryType { get; set; } = AirRecoveryTypes.Neutral;
@@ -17,19 +18,23 @@ public class DelayAirRecoveryEvent : IScenarioEvent
     private int _framesSinceTechPossible = -1;
     private bool _recoveryEnabled = true;
     private int _delayBy = -1;
-    private int _prevAirRecoverySetting = -1;
-    public int FramesUntilEvent(int inputReversalFrame, bool isUserControllingDummy)
+    private RecoveryValues? _prevAirRecoverySetting = null;
+    public int Probability { get; set; } = 100;
+    public int MinHitCount { get; set; } = 1;
+    public int MaxHitCount { get; set; } = 100;
+    
+    public int FramesUntilEvent(bool isUserControllingDummy)
     {
         if (MemoryReader is null)
             return int.MaxValue;
         
         IScenarioEvent thisButEvent = this;
         
-        int currentAirRecoverySetting = MemoryReader.GetAirRecoverySetting();
+        RecoveryValues currentAirRecoverySetting = MemoryReader.GetAirRecoverySetting();
         if (currentAirRecoverySetting != _prevAirRecoverySetting)
         {
             _oldAirRecoverySetting = currentAirRecoverySetting;
-            _recoveryEnabled = (currentAirRecoverySetting != 0);
+            _recoveryEnabled = (currentAirRecoverySetting != RecoveryValues.Disabled);
         }
 
         if (isUserControllingDummy)
@@ -37,22 +42,34 @@ public class DelayAirRecoveryEvent : IScenarioEvent
             _framesSinceTechPossible = -1;
             return int.MaxValue;
         }
-
+        
         var playerSide = MemoryReader.GetPlayerSide();
         var dummySide = 1 - playerSide;
-        var timeUntilTech = MemoryReader.GetTimeUntilTech(dummySide);
-        bool hasTechRelatedFlag = MemoryReader.GetTechRelatedFlag(dummySide);
         
-        bool techOnNextFrame = timeUntilTech == 1 && hasTechRelatedFlag;
+        var timeUntilTech = MemoryReader.GetHitstun(dummySide);
+        bool airtechEnabled = MemoryReader.GetIsAirtechEnabled(dummySide);
+        
+        bool techOnNextFrame = timeUntilTech == 1 && airtechEnabled && !MemoryReader.GetWillBeInHitstunNextFrame(dummySide);
         
         if (techOnNextFrame)
         {
             _framesSinceTechPossible = 0;
-            _delayBy = _random.Next(MinDelay, MaxDelay + 1);
+            
+            int comboCount = MemoryReader.GetComboCount(dummySide);
+            if (_random.Next(1, 101) <= Probability
+                    && comboCount >= MinHitCount && comboCount <= MaxHitCount)
+            {
+                _delayBy = _random.Next(MinDelay, MaxDelay + 1);
+            }
+            else
+            {
+                _delayBy = int.MaxValue;
+            }
+            
             if (_delayBy != 0 && _recoveryEnabled)
             {
-                MemoryReader.WriteAirRecoverySetting(0);
-                _prevAirRecoverySetting = 0;
+                MemoryReader.WriteAirRecoverySetting(RecoveryValues.Disabled);
+                _prevAirRecoverySetting = RecoveryValues.Disabled;
                 _recoveryEnabled = false;
             }
         }
@@ -62,20 +79,23 @@ public class DelayAirRecoveryEvent : IScenarioEvent
             if (_framesSinceTechPossible == _delayBy)
             {
                 MemoryReader.StopDummyPlayback();
-                if (!_recoveryEnabled)
+                if (!_recoveryEnabled || AirRecoveryType == AirRecoveryTypes.Random)
                 {
                     _prevAirRecoverySetting = AirRecoveryType switch {
-                        AirRecoveryTypes.Backward => 1,
-                        AirRecoveryTypes.Neutral => 2,
-                        AirRecoveryTypes.Forward => 3,
-                        AirRecoveryTypes.Random => 4,
-                        _ => 2
+                        AirRecoveryTypes.Backward => RecoveryValues.Backward,
+                        AirRecoveryTypes.Neutral => RecoveryValues.Neutral,
+                        AirRecoveryTypes.Forward => RecoveryValues.Forward,
+                        // RecoveryValues.Random has a chance of not teching at all.
+                        // We have a separate control for probability of teching (see int Probability) so we don't want it.
+                        // Instead, we'll randomly set a particular type of recovery
+                        AirRecoveryTypes.Random => RandomRecoveryType(),
+                        _ => RecoveryValues.Neutral
                     };
-                    MemoryReader.WriteAirRecoverySetting(_prevAirRecoverySetting);
+                    MemoryReader.WriteAirRecoverySetting((RecoveryValues)_prevAirRecoverySetting);
                     _recoveryEnabled = true;
                 }
                 _framesSinceTechPossible = -1;
-                return thisButEvent.ApplySuperFreezeSlowdown(TechDuration, dummySide, playerSide, inputReversalFrame);;
+                return thisButEvent.ApplySuperFreezeSlowdown(TechDuration, dummySide, playerSide);
             }
             if (_framesSinceTechPossible < int.MaxValue)
                 ++_framesSinceTechPossible;
@@ -85,7 +105,7 @@ public class DelayAirRecoveryEvent : IScenarioEvent
         if (animationString == TechAnimation)
         {
             var animFrame = MemoryReader.GetAnimFrame(dummySide);
-            return thisButEvent.ApplySuperFreezeSlowdown(TechDuration - animFrame, dummySide, playerSide, inputReversalFrame);
+            return thisButEvent.ApplySuperFreezeSlowdown(TechDuration - animFrame, dummySide, playerSide);
         }
         return int.MaxValue;
     }
@@ -101,17 +121,29 @@ public class DelayAirRecoveryEvent : IScenarioEvent
         
         _oldAirRecoverySetting = MemoryReader.GetAirRecoverySetting();
         _prevAirRecoverySetting = _oldAirRecoverySetting;
-        _recoveryEnabled = (_oldAirRecoverySetting != 0);
+        _recoveryEnabled = (_oldAirRecoverySetting != RecoveryValues.Disabled);
+        _framesSinceTechPossible = -1;
     }
+    public void OnStageReset() => _framesSinceTechPossible = -1;
     public void Finish()
     {
         if (MemoryReader == null)
             return;
         
-        if (_oldAirRecoverySetting != -1)
+        if (_oldAirRecoverySetting != null)
         {
-            MemoryReader.WriteAirRecoverySetting(_oldAirRecoverySetting);
+            MemoryReader.WriteAirRecoverySetting((RecoveryValues)_oldAirRecoverySetting);
         }
+    }
+    private RecoveryValues RandomRecoveryType()
+    {
+        int r = _random.Next(1, 4);
+        return r switch
+        {
+            1 => RecoveryValues.Neutral,
+            2 => RecoveryValues.Backward,
+            _ => RecoveryValues.Forward
+        };
     }
 
 }

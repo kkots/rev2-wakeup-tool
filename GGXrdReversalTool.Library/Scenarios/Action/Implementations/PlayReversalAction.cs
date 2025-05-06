@@ -1,7 +1,4 @@
-﻿using System.Runtime.InteropServices;
-using GGXrdReversalTool.Library.Configuration;
-using GGXrdReversalTool.Library.Input;
-using GGXrdReversalTool.Library.Logging;
+﻿using GGXrdReversalTool.Library.Logging;
 using GGXrdReversalTool.Library.Memory;
 using GGXrdReversalTool.Library.Models;
 using GGXrdReversalTool.Library.Models.Inputs;
@@ -11,17 +8,21 @@ namespace GGXrdReversalTool.Library.Scenarios.Action.Implementations;
 public class PlayReversalAction : IScenarioAction
 {
     public IMemoryReader? MemoryReader { get; set; }
-    public SlotInput[] Inputs { get; set; } = {};
+    public SlotInput[] Inputs { get; set; } = Array.Empty<SlotInput>();
     public bool IsRunning { get; private set; }
-    public bool[] GuaranteeChargeInputArray { get; set; } = { false, false, false };
-
+    public bool[] GuaranteeChargeInputArray { get; set; } = Array.Empty<bool>();
     public void Init(int slotNumber)
     {
         if (MemoryReader == null)
         {
             return;
         }
-
+        
+        if (SlotNumber < 1 || SlotNumber > 3)
+        {
+            SlotNumber = 1;
+        }
+        
         MemoryReader.WriteInputInSlot(SlotNumber, Inputs[slotNumber - 1]);
     }
     public int SlotNumber { get; set; } = 1;
@@ -31,6 +32,10 @@ public class PlayReversalAction : IScenarioAction
         if (MemoryReader == null)
         {
             return;
+        }
+        if (slotNumberGame > 3)
+        {
+            slotNumberGame = 1;
         }
         LogManager.Instance.WriteLine("PlayReversalAction Execute!");
         int playerSide = MemoryReader.GetPlayerSide();
@@ -50,8 +55,8 @@ public class PlayReversalAction : IScenarioAction
             return;
         }
         var dummySide = 1 - MemoryReader.GetPlayerSide();
-        var dummyMode = MemoryReader.GetDummyMode();
-        if (dummyMode is < 2 or > 3) // neither playing nor recording
+        TrainingDummyRecordingMode dummyMode = MemoryReader.GetDummyMode();
+        if (dummyMode is not TrainingDummyRecordingMode.Recording and not TrainingDummyRecordingMode.PlayingBack)
         {
             int slotSetting = MemoryReader.GetTrainingRecordingSlot();
             if (slotSetting is >= 0 and <= 2)

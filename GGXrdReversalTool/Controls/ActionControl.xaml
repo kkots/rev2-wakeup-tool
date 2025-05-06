@@ -18,7 +18,7 @@
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
             <TextBlock TextWrapping="Wrap" Text="Action to perform :" Margin="0,5"/>
-            <TextBox Grid.Row="1" Height="60" Text="{Binding ElementName=Control, Path=RawInputText, UpdateSourceTrigger=PropertyChanged}" />
+            <TextBox Grid.Row="1" Height="60" Text="{Binding ElementName=Control, Path=RawInputText, UpdateSourceTrigger=PropertyChanged}" TextWrapping="Wrap"/>
             <Grid Grid.Row="2">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="*" />
@@ -59,8 +59,18 @@
                 <local:CondensedInputControl CondensedInputs="{Binding ElementName=Control, Path=RawInputText, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource InputConverter}}"/>
             </ScrollViewer>
             <DockPanel Grid.Row="5" LastChildFill="False">
-                <Button Content="Import" DockPanel.Dock="Left" Width="75" Command="{Binding ElementName=Control, Path=ImportCommand}"></Button>
-                <Button Content="Export" DockPanel.Dock="Right" Width="75" Command="{Binding ElementName=Control, Path=ExportCommand}" ></Button>
+                <Menu DockPanel.Dock="Left">
+                    <MenuItem Header="Import">
+                        <MenuItem Header="Import from .ggrs file into 'Action to perform' text panel" Command="{Binding ElementName=Control, Path=ImportCommand}"/>
+                        <MenuItem Header="Import from in-game slot into 'Action to perform' text panel" Command="{Binding ElementName=Control, Path=ImportFromInGameSlotCommand}"/>
+                    </MenuItem>
+                </Menu>
+                <Menu DockPanel.Dock="Right">
+                    <MenuItem Header="Export">
+                        <MenuItem Header="Export from 'Action to perform' text panel to .ggrs file" Command="{Binding ElementName=Control, Path=ExportCommand}"/>
+                        <MenuItem Header="Export from 'Action to perform' text panel to in-game slot" Command="{Binding ElementName=Control, Path=ExportToInGameSlotCommand}"/>
+                    </MenuItem>
+                </Menu>
             </DockPanel>
         </Grid>
     </GroupBox>

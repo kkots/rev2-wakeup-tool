@@ -14,9 +14,10 @@
                     <RowDefinition/>
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
-                <Button Content="Import" HorizontalAlignment="Center" VerticalAlignment="Center" Command="{Binding ElementName=Control, Path=ImportCommand}" CommandParameter="{Binding ElementName=ImportSlotControl, Path=SlotNumber}" />
+                <Button Content="Import" HorizontalAlignment="Center" VerticalAlignment="Center" Command="{Binding ElementName=Control, Path=ImportCommand}" CommandParameter="{Binding ElementName=ImportSlotControl, Path=SlotNumber}"
+                    ToolTipService.ToolTip="Reads inputs from a .ggrs file and writes them directly into an in-game slot."/>
                 
-                <local:SlotsControl x:Name="ImportSlotControl" Grid.Row="1" GroupName="Import from slot :" />
+                <local:SlotSelectionControl x:Name="ImportSlotControl" Grid.Row="1" GroupName="Import to slot :" />
             </Grid>
         </GroupBox>
         <GroupBox Header="Export" DockPanel.Dock="Bottom">
@@ -25,8 +26,9 @@
                     <RowDefinition/>
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
-                <Button Content="Export" HorizontalAlignment="Center" VerticalAlignment="Center" Command="{Binding ElementName=Control, Path=ExportCommand}" CommandParameter="{Binding ElementName=ExportSlotControl, Path=SlotNumber}" />
-                <local:SlotsControl x:Name="ExportSlotControl" Grid.Row="1" GroupName="Slot to export :"/>
+                <Button Content="Export" HorizontalAlignment="Center" VerticalAlignment="Center" Command="{Binding ElementName=Control, Path=ExportCommand}" CommandParameter="{Binding ElementName=ExportSlotControl, Path=SlotNumber}"
+                    ToolTipService.ToolTip="Reads inputs directly from an in-game slot and writes them into a .ggrs file."/>
+                <local:SlotSelectionControl x:Name="ExportSlotControl" Grid.Row="1" GroupName="Slot to export :"/>
             </Grid>
         </GroupBox>
     </UniformGrid>

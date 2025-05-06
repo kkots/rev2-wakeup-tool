@@ -9,7 +9,7 @@
         mc:Ignorable="d"
         x:Name="Window"
         Title="{Binding Title}"
-        Height="450" Width="800"
+        Height="475" Width="800"
         Closed="MainWindow_OnClosed"
         >
     <Window.DataContext>
@@ -41,14 +41,17 @@
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
-                            <controls:EventControl x:Name="EventControl" Grid.Column="0" Grid.Row="0" ScenarioEvent="{Binding ScenarioEvent, Mode=OneWayToSource}" IsEnabled="{Binding IsRunning, Converter={StaticResource AntiBooleanConverter}}"/>
-                            <controls:ActionControl Grid.Column="1" Grid.Row="0" ScenarioAction="{Binding ScenarioAction, Mode=OneWayToSource}" IsEnabled="{Binding IsRunning, Converter={StaticResource AntiBooleanConverter}}" ScenarioEvent="{Binding ScenarioEvent, ElementName=EventControl, Mode=OneWay}" SlotNumber="{Binding SlotNumber, ElementName=SlotsControl, Mode=OneWay}"/>
-                            <controls:FrequencyControl Grid.Column="2" Grid.Row="0" ScenarioFrequency="{Binding ScenarioFrequency, Mode=OneWayToSource}" IsEnabled="{Binding IsRunning, Converter={StaticResource AntiBooleanConverter}}"/>
+                            <controls:EventTabsControl x:Name="EventTabsControl" Grid.Column="0" Grid.Row="0" IsTabContentEnabled="{Binding IsRunning, Converter={StaticResource AntiBooleanConverter}}" Tabs="{Binding EventTabs}" SelectedItem="{Binding SelectedEventTab, Mode=OneWayToSource}"/>
+                            <controls:ActionControl Grid.Column="1" Grid.Row="0" IsEnabled="{Binding IsRunning, Converter={StaticResource AntiBooleanConverter}}" ScenarioEvent="{Binding ScenarioEvent, ElementName=EventTabsControl, Mode=OneWay}" TabElement="{Binding SelectedItem, ElementName=EventTabsControl}" IsRunning="{Binding IsRunning}" ImportExportSlot="ActionControl_ImportExportSlot"/>
+                            <controls:FrequencyControl Grid.Column="2" Grid.Row="0" IsEnabled="{Binding IsRunning, Converter={StaticResource AntiBooleanConverter}}" ControlData="{Binding FrequencyData, ElementName=EventTabsControl}" SlotsData="{Binding SlotsData, ElementName=EventTabsControl}" TabElement="{Binding SelectedItem, ElementName=EventTabsControl}"/>
                             <controls:EnableDisableScenarioControl Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="3" Margin="0,5,0,0" EnableCommand="{Binding EnableCommand}" DisableCommand="{Binding DisableCommand}"/>
-                            <controls:SlotsControl x:Name="SlotsControl" Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="3" GroupName="Recording Slot" SlotNumber="{Binding SlotNumber}"/>
+                            <controls:SlotsControl x:Name="SlotsControl" Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="3" GroupName="Recording Slot" SlotNumber="{Binding SlotNumber, Mode=OneWayToSource}" ControlData="{Binding SlotsData, ElementName=EventTabsControl}"/>
                         </Grid>
                     </GroupBox>
                 </DockPanel>
+            </TabItem>
+            <TabItem Header="Block Switching">
+                <controls:BlockSwitchingControl ScenarioBlockSwitching="{Binding ScenarioBlockSwitching, Mode=OneWayToSource}" BlockTimer="{Binding BlockTimer, Mode=OneWayToSource}" IsRunning="{Binding IsRunning}"/>
             </TabItem>
             <TabItem Header="Import/Export">
                 <controls:SlotImportExportControl ImportCommand="{Binding ImportCommand}" ExportCommand="{Binding ExportCommand}"/>

@@ -1,13 +1,16 @@
 ﻿using System;
+using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Windows;
+using System.Windows.Controls;
 using GGXrdReversalTool.Commands;
 using GGXrdReversalTool.Library.Logging;
 using GGXrdReversalTool.Library.Models.Inputs;
 using GGXrdReversalTool.Library.Scenarios.Action;
 using GGXrdReversalTool.Library.Scenarios.Action.Implementations;
 using GGXrdReversalTool.Library.Scenarios.Event;
+using GGXrdReversalTool.ViewModels;
 using Microsoft.Win32;
 
 namespace GGXrdReversalTool.Controls;
@@ -19,15 +22,84 @@ public sealed partial class ActionControl
         InitializeComponent();
     }
     
-
-    private readonly string[] _rawInputTexts = {string.Empty, string.Empty, string.Empty};
+    public EventTabElement? TabElement
+    {
+        get => (EventTabElement?)GetValue(TabElementProperty);
+        set => SetValue(TabElementProperty, value);
+    }
+    public static readonly DependencyProperty TabElementProperty =
+        DependencyProperty.Register(nameof(TabElement), typeof(EventTabElement), typeof(ActionControl),
+            new PropertyMetadata(default(EventTabElement), OnTabElementPropertyChanged));
+    
+    public bool IsRunning
+    {
+        get => (bool)GetValue(IsRunningProperty);
+        set => SetValue(IsRunningProperty, value);
+    }
+    public static readonly DependencyProperty IsRunningProperty =
+        DependencyProperty.Register(nameof(IsRunning), typeof(bool), typeof(ActionControl),
+            new PropertyMetadata(false));
+    
+    private EventTabElement? _lastSubscribedTabElement = null;
+    public static void OnTabElementPropertyChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    {
+        ActionControl control = (ActionControl)d;
+        control.OnPropertyChanged("RawInputText");
+        control.OnPropertyChanged("GuaranteeChargeInput");
+        control.UpdateWarnings();
+        
+        if (control._lastSubscribedTabElement != null)
+        {
+            control._lastSubscribedTabElement.SlotsData.PropertyChanged -= control.OnSubscribedTabElementSlotsDataPropertyChanged;
+        }
+        control._lastSubscribedTabElement = control.TabElement;
+        if (control._lastSubscribedTabElement != null)
+        {
+            control._lastSubscribedTabElement.SlotsData.PropertyChanged += control.OnSubscribedTabElementSlotsDataPropertyChanged;
+        }
+        control.ResubscribeToSlot();
+    }
+    
+    public void OnSubscribedTabElementSlotsDataPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName != null && e.PropertyName.Equals("SlotNumber"))
+        {
+            ResubscribeToSlot();
+            OnPropertyChanged("RawInputText");
+            OnPropertyChanged("GuaranteeChargeInput");
+            CreateScenario();
+        }
+    }
+    
+    private SlotsControlSlotData? _lastSubscribedSlot = null;
+    private void ResubscribeToSlot()
+    {
+        if (_lastSubscribedSlot != null)
+        {
+            _lastSubscribedSlot.PropertyChanged -= OnSubscribedSlotPropertyChanged;
+        }
+        _lastSubscribedSlot = TabElement?.SlotsData.CurrentSlot;
+        if (_lastSubscribedSlot != null)
+        {
+            _lastSubscribedSlot.PropertyChanged += OnSubscribedSlotPropertyChanged;
+        }
+    }
+    public void OnSubscribedSlotPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName != null && e.PropertyName.Equals("Text"))
+        {
+            OnPropertyChanged("RawInputText");
+            CreateScenario();
+        }
+    }
+    
     public string RawInputText
     {
-        get => _rawInputTexts[_slotNumber - 1];
+        get => TabElement?.SlotsData.CurrentSlot.Text ?? string.Empty;
         set
         {
-            if (value == _rawInputTexts[_slotNumber - 1]) return;
-            _rawInputTexts[_slotNumber - 1] = value;
+            if (TabElement == null || value == TabElement.SlotsData.CurrentSlot.Text) return;
+            TabElement.SlotsData.CurrentSlot.Text = value;
             OnPropertyChanged();
             CreateScenario();
         }
@@ -81,103 +153,34 @@ public sealed partial class ActionControl
         }
     }
     
-    private bool[] _guaranteeChargeInputArray = { false, false, false };
     public bool GuaranteeChargeInput
     {
-        get => _guaranteeChargeInputArray[_slotNumber - 1];
+        get => TabElement?.SlotsData.CurrentSlot.GuaranteeChargeInput ?? false;
         set
         {
-            if (value == _guaranteeChargeInputArray[_slotNumber - 1]) return;
-            _guaranteeChargeInputArray[_slotNumber - 1] = value;
+            if (TabElement == null || value == TabElement.SlotsData.CurrentSlot.GuaranteeChargeInput) return;
+            TabElement.SlotsData.CurrentSlot.GuaranteeChargeInput = value;
             OnPropertyChanged();
             CreateScenario();
         }
     }
     
-    private IScenarioEvent? _scenarioEvent;
     public IScenarioEvent? ScenarioEvent
     {
         get => (IScenarioEvent)GetValue(ScenarioEventProperty);
-        set
-        {
-            if (_scenarioEvent == value) return;
-            _scenarioEvent = value;
-            UpdateWarnings();
-        }
+        set => SetValue(ScenarioEventProperty, value);
     }
 
     public static readonly DependencyProperty ScenarioEventProperty =
         DependencyProperty.Register(nameof(ScenarioEvent), typeof(IScenarioEvent), typeof(ActionControl),
-            new FrameworkPropertyMetadata(null, OnScenarioEventPropertyChanged)
-            {
-                BindsTwoWayByDefault = false
-            });
-
-    private static void OnScenarioEventPropertyChanged(DependencyObject source,
-        DependencyPropertyChangedEventArgs eventArgs)
-    {
-        if (source is not ActionControl control)
-        {
-            return;
-        }
-        
-        var value = eventArgs.NewValue;
-        control.ScenarioEvent = (IScenarioEvent)value;
+            new PropertyMetadata(null, OnScenarioEventPropertyChanged));
+    
+    public static void OnScenarioEventPropertyChanged(DependencyObject d, DependencyPropertyChangedEventArgs e) {
+        ((ActionControl)d).UpdateWarnings();
     }
     
-    private int _slotNumber = 1;
-    public int SlotNumber
-    {
-        get => (int)GetValue(SlotNumberProperty);
-        set
-        {
-            int coercedValue = Math.Clamp(value, 1, 3);
-            if (_slotNumber == coercedValue) return;
-            _slotNumber = coercedValue;
-            OnPropertyChanged("RawInputText");
-            OnPropertyChanged("GuaranteeChargeInput");
-            CreateScenario();
-        }
-    }
-
-    public static readonly DependencyProperty SlotNumberProperty =
-        DependencyProperty.Register(nameof(SlotNumber), typeof(int), typeof(ActionControl),
-            new FrameworkPropertyMetadata(1, OnSlotNumberPropertyChanged, OnCoerceSlotNumberProperty)
-            {
-                BindsTwoWayByDefault = false
-            });
-
-    private static object OnCoerceSlotNumberProperty(DependencyObject source, object baseValue)
-    {
-        if (baseValue is not int value)
-        {
-            return SlotNumberProperty.DefaultMetadata.DefaultValue;
-        }
-
-        switch (value)
-        {
-            case 1:
-            case 2:
-            case 3:
-                return value;
-
-        }
-
-        return SlotNumberProperty.DefaultMetadata.DefaultValue;
-    }
-    private static void OnSlotNumberPropertyChanged(DependencyObject source,
-        DependencyPropertyChangedEventArgs eventArgs)
-    {
-        if (source is not ActionControl control)
-        {
-            return;
-        }
-
-        var value = eventArgs.NewValue;
-        control.SlotNumber = (int)value;
-    }
-
     public RelayCommand ImportCommand => new(Import);
+    public RelayCommand ImportFromInGameSlotCommand => new(ImportFromInGameSlot);
     private void Import()
     {
         var openFileDialog = new OpenFileDialog
@@ -197,15 +200,39 @@ public sealed partial class ActionControl
 
         if (slotInput.IsValid)
         {
-            RawInputText = slotInput.CondensedInputListText.Aggregate((a, b) => $"{a},{b}");
+            RawInputText = string.Join(",", slotInput.CondensedInputListText);
         }
         else
         {
             MessageBox.Show("Failed to import inputs!", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
+    private void ImportFromInGameSlot()
+    {
+        var slotSelectionWindow = new SlotSelectionDialog();
+        slotSelectionWindow.IsImport = true;
+        if (slotSelectionWindow.ShowDialog() == true)
+        {
+            int selectedSlot = slotSelectionWindow.SlotNumber;
+            ImportExportSlotEventArgs routedEventArgs = new(ImportExportSlotEvent, RawInputText, true, selectedSlot);
+            RaiseEvent(routedEventArgs);
+        }
+    }
+    
+    public static readonly RoutedEvent ImportExportSlotEvent = EventManager.RegisterRoutedEvent(
+        name: "ImportExportSlot",
+        routingStrategy: RoutingStrategy.Bubble,
+        handlerType: typeof(ImportExportSlotEventHandler),
+        ownerType: typeof(ActionControl));
+    
+    public event ImportExportSlotEventHandler ImportExportSlot
+    {
+        add { AddHandler(ImportExportSlotEvent, value); }
+        remove { RemoveHandler(ImportExportSlotEvent, value); }
+    }
 
     public RelayCommand ExportCommand => new(Export, CanExport);
+    public RelayCommand ExportToInGameSlotCommand => new(ExportToInGameSlot, CanExportToInGameSlot);
 
     private void Export()
     {
@@ -218,7 +245,7 @@ public sealed partial class ActionControl
 
         if (!dialogResult.HasValue || !dialogResult.Value) return;
 
-        var condensedInputText = new SlotInput(RawInputText).CondensedInputListText.Aggregate((a, b) => $"{a},{b}");
+        var condensedInputText = string.Join(",", new SlotInput(RawInputText).CondensedInputListText);
 
         try
         {
@@ -236,7 +263,23 @@ public sealed partial class ActionControl
     }
     private bool CanExport()
     {
-        return ScenarioAction != null && ScenarioAction.Inputs[_slotNumber - 1].IsValid;
+        return TabElement != null && _scenarioAction != null && _scenarioAction.Inputs[TabElement.SlotsData.SlotNumber - 1].IsValid;
+    }
+    
+    private bool CanExportToInGameSlot()
+    {
+        return CanExport() && !IsRunning;
+    }
+    private void ExportToInGameSlot()
+    {
+        var slotSelectionWindow = new SlotSelectionDialog();
+        slotSelectionWindow.IsImport = false;
+        if (slotSelectionWindow.ShowDialog() == true)
+        {
+            int selectedSlot = slotSelectionWindow.SlotNumber;
+            ImportExportSlotEventArgs routedEventArgs = new(ImportExportSlotEvent, RawInputText, false, selectedSlot);
+            RaiseEvent(routedEventArgs);
+        }
     }
 
     #region InsertPresetInputCommand
@@ -259,26 +302,22 @@ public sealed partial class ActionControl
 
     #endregion
     
-    public IScenarioAction? ScenarioAction
+    private IScenarioAction? _scenarioAction
     {
-        get => (IScenarioAction?)GetValue(ScenarioActionProperty);
-        set => SetValue(ScenarioActionProperty, value);
+        get => TabElement?.ScenarioAction;
+        set => TabElement!.ScenarioAction = value;
     }
-
-    public static readonly DependencyProperty ScenarioActionProperty =
-        DependencyProperty.Register(nameof(ScenarioAction), typeof(IScenarioAction), typeof(ActionControl),
-            new PropertyMetadata(default(IScenarioAction?)));
-
 
     private void CreateScenario()
     {
-        var inputs = _rawInputTexts.Select(rawInputText => new SlotInput(rawInputText)).ToArray();
+        if (TabElement == null) return;
+        var inputs = TabElement.SlotsData.Slots.Select(slot => new SlotInput(slot.Text)).ToArray();
         
-        ScenarioAction = new PlayReversalAction
+        _scenarioAction = new PlayReversalAction
         {
             Inputs = inputs,
-            SlotNumber = _slotNumber,
-            GuaranteeChargeInputArray = _guaranteeChargeInputArray
+            SlotNumber = TabElement.SlotsData.SlotNumber,
+            GuaranteeChargeInputArray = TabElement.SlotsData.Slots.Select(slot => slot.GuaranteeChargeInput).ToArray()
         };
         UpdateWarnings();
     }
@@ -293,13 +332,13 @@ public sealed partial class ActionControl
     
     private void UpdateTooShort()
     {
-        if (ScenarioAction == null || RawInputText.Length == 0) {
+        if (_scenarioAction == null || TabElement == null || RawInputText.Length == 0) {
             TooShortInfoVisible = Visibility.Collapsed;
             return;
         }
         int tooShortLength = 4;
         int count = 0;
-        foreach (string input in ScenarioAction.Inputs[_slotNumber - 1].ExpandedInputList) {
+        foreach (string input in _scenarioAction.Inputs[TabElement.SlotsData.SlotNumber - 1].ExpandedInputList) {
             ++count;
             if (count > tooShortLength) break;
         }
@@ -339,9 +378,12 @@ public sealed partial class ActionControl
     
     private void UpdateNoNeedStart()
     {
-        if (ScenarioEvent != null && ScenarioEvent.DependsOnReversalFrame()
+        if (ScenarioEvent == null
+                || ScenarioEvent.DependsOnReversalFrame()
+                || TabElement == null
                 || RawInputText.Length == 0
-                || ScenarioAction != null && ScenarioAction.Inputs[_slotNumber - 1].ReversalFrameIndex <= 0
+                || _scenarioAction == null
+                || _scenarioAction.Inputs[TabElement.SlotsData.SlotNumber - 1].ReversalFrameIndex <= 0
                 || !RawInputText.Contains('!')) {
             NoNeedStartMarkerInfoVisible = Visibility.Collapsed;
             return;
@@ -349,3 +391,18 @@ public sealed partial class ActionControl
         NoNeedStartMarkerInfoVisible = Visibility.Visible;
     }
 }
+
+public class ImportExportSlotEventArgs : RoutedEventArgs
+{
+    public ImportExportSlotEventArgs(RoutedEvent id, string RawInputText, bool IsImport, int SlotNumber) : base(id)
+    {
+        this.RawInputText = RawInputText;
+        this.IsImport = IsImport;
+        this.SlotNumber = SlotNumber;
+    }
+    public string RawInputText { get; set; }
+    public bool IsImport { get; set; }
+    public int SlotNumber { get; set; }
+}
+
+public delegate void ImportExportSlotEventHandler(object sender, ImportExportSlotEventArgs e);

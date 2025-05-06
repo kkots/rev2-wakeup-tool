@@ -2,22 +2,48 @@
 using GGXrdReversalTool.Library.Memory;
 using GGXrdReversalTool.Library.Models.Inputs;
 using GGXrdReversalTool.Library.Scenarios.Action;
+using GGXrdReversalTool.Library.Scenarios.BlockSwitching;
 using GGXrdReversalTool.Library.Scenarios.Event;
 using GGXrdReversalTool.Library.Scenarios.Frequency;
 using System.Runtime.InteropServices;
+using System.Xml.Linq;
 
 namespace GGXrdReversalTool.Library.Scenarios;
+
+public class ScenarioElement
+{
+    public IScenarioEvent ScenarioEvent;
+    public IScenarioAction ScenarioAction;
+    public IScenarioFrequency ScenarioFrequency;
+    // contains slot numbers (1,2,3,etc) from a frequency control,
+    // including when there is only one slot with 100% probability,
+    // with exact slot number.
+    // -1 is not allowed here
+    public int[] UsedSlots;
+    
+    public ScenarioElement(
+            IScenarioEvent ScenarioEvent,
+            IScenarioAction ScenarioAction,
+            IScenarioFrequency ScenarioFrequency,
+            int[] UsedSlots) {
+        this.ScenarioEvent = ScenarioEvent;
+        this.ScenarioAction = ScenarioAction;
+        this.ScenarioFrequency = ScenarioFrequency;
+        this.UsedSlots = UsedSlots;
+    }
+    
+    public bool MustIgnoreEvent = false;
+    public int PickedSlot = -1;  // the number of the last picked slot: 1,2,3,etc. -1 means no slot is picked
+    public int MaxReversalFrame = 0;  // out of all used slots (see UsedSlots), how far to the right the '!' symbol is, measured in frames? 0 means it's on the left
+}
 
 public class Scenario : IDisposable
 {
     private readonly IMemoryReader _memoryReader;
     
-    private readonly IScenarioEvent _scenarioEvent;
-    private readonly IScenarioAction _scenarioAction;
-    private readonly IScenarioFrequency _scenarioFrequency;
-    private readonly int _selectedSlot;
-    private readonly int[] _usedSlots;
-
+    private ScenarioElement[] _scenarioElements;
+    private IScenarioBlockSwitching? _scenarioBlockSwitching = null;
+    private int _blockedHitTimer = 30;
 
     private static bool _runThread;
     private static readonly object RunThreadLock = new object();
@@ -27,32 +53,40 @@ public class Scenario : IDisposable
 
 
     public Scenario(
-        IMemoryReader memoryReader, 
-        IScenarioEvent scenarioEvent, 
-        IScenarioAction scenarioAction, 
-        int selectedSlot, 
-        int[] usedSlots, 
-        IScenarioFrequency scenarioFrequency)
+        IMemoryReader memoryReader,
+        ScenarioElement[] scenarioElements,
+        IScenarioBlockSwitching? ScenarioBlockSwitching,
+        int BlockedHitTimer)
     {
-        _memoryReader = memoryReader; 
-        _scenarioEvent = scenarioEvent;
-        _scenarioAction = scenarioAction;
-        _selectedSlot = selectedSlot;
-        _usedSlots = usedSlots;
-        _scenarioFrequency = scenarioFrequency;
+        _memoryReader = memoryReader;
+        _scenarioElements = scenarioElements;
+        _scenarioBlockSwitching = ScenarioBlockSwitching;
+        _blockedHitTimer = BlockedHitTimer;
     }
 
 
     private void Init()
     {
         
+        if (_scenarioBlockSwitching != null)
+        {
+            _scenarioBlockSwitching.MemoryReader = _memoryReader;
+            _scenarioBlockSwitching.Init();
+        }
         //TODO Inject via factory
-        _scenarioEvent.MemoryReader = _memoryReader;
-        _scenarioAction.MemoryReader = _memoryReader;
-        _scenarioFrequency.MemoryReader = _memoryReader;
-        
-        _scenarioAction.Init(_selectedSlot);
-        _scenarioEvent.Init();
+        foreach (ScenarioElement element in _scenarioElements)
+        {
+            element.ScenarioEvent.MemoryReader = _memoryReader;
+            element.ScenarioEvent.BlockedHitTimer = _blockedHitTimer;
+            element.ScenarioAction.MemoryReader = _memoryReader;
+            element.ScenarioFrequency.MemoryReader = _memoryReader;
+            
+            if (_scenarioElements.Length == 1 && element.UsedSlots.Length == 1)
+            {
+                element.ScenarioAction.Init(element.UsedSlots[0]);
+            }
+            element.ScenarioEvent.Init();
+        }
 
     }
 
@@ -73,23 +107,26 @@ public class Scenario : IDisposable
             var localRunThread = true;
 
             uint oldWhatCanDoFlags = 0;
-            bool dummyLocked = false;
+            ScenarioElement? dummyLocked = null;
+            
             var engineTicks = _memoryReader.GetEngineTickCount();
             var prevEngineTicks = engineTicks;
             var aswEngineTicks = _memoryReader.GetAswEngineTickCount();
             var prevAswEngineTicks = aswEngineTicks;
-            int pickedSlot = -1;
-            bool mustIgnoreEvent = false;
-            int maxReversalFIndex = 0;
-            bool dependsOnReversalFrame = _scenarioEvent.DependsOnReversalFrame();
-            if (dependsOnReversalFrame)
+            foreach (ScenarioElement element in _scenarioElements)
             {
-                foreach (int slotNumber in _usedSlots)
+                element.MustIgnoreEvent = false;
+                element.PickedSlot = -1;
+                element.MaxReversalFrame = 0;
+                if (element.ScenarioEvent.DependsOnReversalFrame())
                 {
-                    int reversalFIndex = Math.Max(0, _scenarioAction.Inputs[slotNumber - 1].ReversalFrameIndex);
-                    if (reversalFIndex > maxReversalFIndex)
+                    foreach (int slotNumber in element.UsedSlots)
                     {
-                        maxReversalFIndex = reversalFIndex;
+                        int reversalFIndex = Math.Max(0, element.ScenarioAction.Inputs[slotNumber - 1].ReversalFrameIndex);
+                        if (reversalFIndex > element.MaxReversalFrame)
+                        {
+                            element.MaxReversalFrame = reversalFIndex;
+                        }
                     }
                 }
             }
@@ -119,103 +156,122 @@ public class Scenario : IDisposable
                 // Very unlikely, but skip this tick if somehow we overslept into the middle of a new tick
                 if (worldInTick) continue;
                 
+                if (!_memoryReader.IsBattle()) continue;  // not in-game or switching characters?
+                
                 // Check if the match frame counter advanced.
                 // It will not advance if the Pause Menu is open or another mod paused the game via other means.
                 prevAswEngineTicks = aswEngineTicks;
                 aswEngineTicks = _memoryReader.GetAswEngineTickCount();
                 if (aswEngineTicks == prevAswEngineTicks) continue;
-                if (!_memoryReader.MatchRunning())  // stage reset?
-                {
-                    _scenarioFrequency.onStageReset();
+                if (!_memoryReader.MatchRunning()) {  // stage reset?
+                    foreach (ScenarioElement element in _scenarioElements)
+                    {
+                        element.ScenarioFrequency.OnStageReset();
+                        element.ScenarioEvent.OnStageReset();
+                    }
+                    _scenarioBlockSwitching?.OnStageReset();
                 }
                 
-                if (_scenarioAction.IsRunning)
-                {
-                    _scenarioAction.Tick();
-                    // TODO (low priority?): Logic for cancelling actions
-                }
-                // Only execute a reversal on the exact frame, skipping if we miss it
-                // Potentially configurable later, e.g. executing one frame early or on the exact frame if missed
-                int framesUntilEvent = _scenarioEvent.FramesUntilEvent(0, _memoryReader.IsUserControllingDummy());
+                bool isUserControllingDummy = _memoryReader.IsUserControllingDummy();
+                _scenarioBlockSwitching?.Tick(isUserControllingDummy);
+                bool isHitReversal = _scenarioBlockSwitching?.IsHitReversal() ?? false;
                 
-                if (framesUntilEvent == int.MaxValue)
+                int playerSide = _memoryReader.GetPlayerSide();
+                int dummySide = 1 - playerSide;
+                
+                foreach (ScenarioElement element in _scenarioElements)
                 {
-                    pickedSlot = -1;
-                }
-                else if (0 == framesUntilEvent - maxReversalFIndex)
-                {
-                    LogManager.Instance.WriteLine("Event Occured");
-
-                    int slotNumber = 0;
-                    pickedSlot = -1;
-                    mustIgnoreEvent = !_scenarioFrequency.ShouldHappen(out slotNumber);
+                    if (element.ScenarioAction.IsRunning)
+                    {
+                        element.ScenarioAction.Tick();
+                        // TODO (low priority?): Logic for cancelling actions
+                    }
+                    // Only execute a reversal on the exact frame, skipping if we miss it
+                    // Potentially configurable later, e.g. executing one frame early or on the exact frame if missed
+                    element.ScenarioEvent.IsHitReversal = isHitReversal;
+                    int framesUntilEvent = element.ScenarioEvent.FramesUntilEvent(isUserControllingDummy);
                     
-                    if (!mustIgnoreEvent)
+                    if (framesUntilEvent == int.MaxValue || dummyLocked != null && dummyLocked != element)
                     {
-                        pickedSlot = slotNumber;
-                        if (pickedSlot == -1)
+                        element.PickedSlot = -1;
+                    }
+                    else if (0 == framesUntilEvent - element.MaxReversalFrame)
+                    {
+                        LogManager.Instance.WriteLine("Event Occured");
+    
+                        int slotNumber = 0;
+                        element.PickedSlot = -1;
+                        element.MustIgnoreEvent = !element.ScenarioFrequency.ShouldHappen(out slotNumber);
+                        
+                        if (!element.MustIgnoreEvent)
                         {
-                            pickedSlot = _selectedSlot;
+                            if (slotNumber == -1)
+                                slotNumber = element.UsedSlots[0];
+                            
+                            element.PickedSlot = slotNumber;
                         }
                     }
-                }
-                
-                if (dummyLocked && 0 == framesUntilEvent)
-                {
-                    dummyLocked = false;
-                    _memoryReader.UnlockDummy(1 - _memoryReader.GetPlayerSide(), oldWhatCanDoFlags);
-                }
-                
-                int reversalFrameIndex = -1;
-                if (pickedSlot != -1)
-                {
-                    reversalFrameIndex = _scenarioAction.Inputs[pickedSlot - 1].ReversalFrameIndex;
-                }
-                
-                if (pickedSlot != -1
-                    && !mustIgnoreEvent
-                    && framesUntilEvent < int.MaxValue
-                    && (
-                        dependsOnReversalFrame
-                        && 0 == framesUntilEvent - Math.Max(0, reversalFrameIndex)
-                        || !dependsOnReversalFrame
-                        && 0 == framesUntilEvent))
-                {
-                    bool actionValid = _scenarioEvent.CanEnable(_scenarioAction, pickedSlot);
-                    if (!actionValid)
+                    
+                    if (dummyLocked == element && 0 == framesUntilEvent)
                     {
-                        _scenarioAction.Execute(pickedSlot, pickedSlot);
+                        dummyLocked = null;
+                        _memoryReader.UnlockDummy(dummySide, oldWhatCanDoFlags);
                     }
-                    else 
+                    
+                    int reversalFrameIndex = -1;
+                    if (!element.ScenarioEvent.DependsOnReversalFrame())
                     {
-                        if (_usedSlots.Length > 1)
-                        {
-                            _scenarioAction.Init(pickedSlot);
-                        }
-                        if (dependsOnReversalFrame
-                                && reversalFrameIndex > 0
-                                && _scenarioEvent.NeedLockDummyUntilEvent()
-                                && !dummyLocked)
-                        {
-                            dummyLocked = true;
-                            _memoryReader.LockDummy(1 - _memoryReader.GetPlayerSide(), out oldWhatCanDoFlags);
-                        }
-                        _scenarioAction.Execute(_scenarioAction.SlotNumber, pickedSlot);
+                        reversalFrameIndex = 0;
                     }
-                    pickedSlot = -1;
-
-                    LogManager.Instance.WriteLine("Action Executed");
+                    else if (element.PickedSlot != -1)
+                    {
+                        reversalFrameIndex = element.ScenarioAction.Inputs[element.PickedSlot - 1].ReversalFrameIndex;
+                    }
+                    
+                    
+                    if (element.PickedSlot != -1
+                        && !element.MustIgnoreEvent
+                        && framesUntilEvent < int.MaxValue
+                        && 0 == framesUntilEvent - Math.Max(0, reversalFrameIndex))
+                    {
+                        bool actionValid = element.ScenarioEvent.CanEnable(element.ScenarioAction, element.PickedSlot);
+                        if (!actionValid)
+                        {
+                            element.ScenarioAction.Execute(element.PickedSlot, element.PickedSlot);
+                        }
+                        else 
+                        {
+                            if (element.UsedSlots.Length > 1 || _scenarioElements.Length > 1)
+                            {
+                                element.ScenarioAction.Init(element.PickedSlot);
+                            }
+                            if (reversalFrameIndex > 0
+                                    && element.ScenarioEvent.NeedLockDummyUntilEvent()
+                                    && dummyLocked == null)
+                            {
+                                dummyLocked = element;
+                                _memoryReader.LockDummy(dummySide, out oldWhatCanDoFlags);
+                            }
+                            element.ScenarioAction.Execute(element.ScenarioAction.SlotNumber, element.PickedSlot);
+                        }
+                        element.PickedSlot = -1;
+    
+                        LogManager.Instance.WriteLine("Action Executed");
+                    }
                 }
             }
 
             timeEndPeriod(1);
             
-            if (dummyLocked)
+            if (dummyLocked != null)
             {
-                dummyLocked = false;
+                dummyLocked = null;
                 _memoryReader.UnlockDummy(1 - _memoryReader.GetPlayerSide(), oldWhatCanDoFlags);
             }
-            _scenarioEvent.Finish();
+            foreach (ScenarioElement element in _scenarioElements)
+            {
+                element.ScenarioEvent.Finish();
+            }
             LogManager.Instance.WriteLine("Scenario Thread ended");
         });
 

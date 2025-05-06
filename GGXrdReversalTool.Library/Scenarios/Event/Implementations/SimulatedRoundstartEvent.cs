@@ -8,7 +8,7 @@ public class SimulatedRoundstartEvent : IScenarioEvent
     public IMemoryReader? MemoryReader { get; set; }
     public bool IsValid => true;
 
-    public int FramesUntilEvent(int inputReversalFrame, bool isUserControllingDummy)
+    public int FramesUntilEvent(bool isUserControllingDummy)
     {
         if (MemoryReader is null || isUserControllingDummy)
             return int.MaxValue;
@@ -18,7 +18,7 @@ public class SimulatedRoundstartEvent : IScenarioEvent
         if (animationString != "CounterGuardStand") return int.MaxValue;
         var animFrame = MemoryReader.GetAnimFrame(playerSide);
 
-        var result = 50 - animFrame - inputReversalFrame;
+        var result = 50 - animFrame;
 
         return result;
     }

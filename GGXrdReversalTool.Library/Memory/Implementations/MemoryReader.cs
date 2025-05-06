@@ -5,6 +5,9 @@ using System.Collections.Immutable;
 using GGXrdReversalTool.Library.Domain.Characters;
 using GGXrdReversalTool.Library.Memory.Pointer;
 using GGXrdReversalTool.Library.Models.Inputs;
+using GGXrdReversalTool.Library.Scenarios.Event;
+using GGXrdReversalTool.Library.Models;
+using System.Numerics;
 
 namespace GGXrdReversalTool.Library.Memory.Implementations;
 
@@ -38,11 +41,11 @@ public class MemoryReader : IMemoryReader
         result = result && SetDummyRecordingSlot(slotNumber);
         result = result && Write(_pointerCollection.DummyRecInputsIndexPtr, inputIndex);
         result = result && Write(_pointerCollection.DummyRecInputsSidePtr, startingSide);
-        result = result && Write(_pointerCollection.DummyModePtr, 3);
+        result = result && Write(_pointerCollection.DummyModePtr, (int)TrainingDummyRecordingMode.PlayingBack);
         return result;
     }
 
-    public bool StopDummyPlayback() => Write(_pointerCollection.DummyModePtr, 0);
+    public bool StopDummyPlayback() => Write(_pointerCollection.DummyModePtr, (int)TrainingDummyRecordingMode.Idle);
 
     public bool SetDummyRecordingSlot(int slotNumber)
     {
@@ -53,9 +56,9 @@ public class MemoryReader : IMemoryReader
         return Write(_pointerCollection.DummyRecInputsSlotPtr, slotNumber - 1);
     }
 
-    public int GetDummyMode()
+    public TrainingDummyRecordingMode GetDummyMode()
     {
-        return Read<int>(_pointerCollection.DummyModePtr);
+        return (TrainingDummyRecordingMode)Read<int>(_pointerCollection.DummyModePtr);
     }
 
     public int GetTrainingRecordingSlot()
@@ -78,9 +81,8 @@ public class MemoryReader : IMemoryReader
 
     public void LockDummy(int player, out uint oldFlags)
     {
-        oldFlags = 0;
         if (player is < 0 or > 1)
-            return;
+            throw new ArgumentException($"Player index is invalid : {player}");
             
         oldFlags = Read<uint>(_pointerCollection.Players[player].WhatCanDoFlagsPtr);
         Write(_pointerCollection.Players[player].WhatCanDoFlagsPtr, 0);
@@ -88,26 +90,51 @@ public class MemoryReader : IMemoryReader
     public void UnlockDummy(int player, uint oldFlags)
     {
         if (player is < 0 or > 1)
-            return;
+            throw new ArgumentException($"Player index is invalid : {player}");
             
         Write(_pointerCollection.Players[player].WhatCanDoFlagsPtr, (int)oldFlags);
     }
-    public int GetTimeUntilTech(int player) =>
-        player is < 0 or > 1
-        ? 0
-        : Read<int>(_pointerCollection.Players[player].TimeUntilTechPtr);
-    public bool GetTechRelatedFlag(int player)
+    public int GetHitstun(int player)
     {
         if (player is < 0 or > 1)
-            return false;
+            throw new ArgumentException($"Player index is invalid : {player}");
+        return Read<int>(_pointerCollection.Players[player].HitstunPtr);
+    }
+    // Jitabata (stagger), Hajikare (rejection) are treated as hitstun. Bursting, Kizetsu (dizzy), airtech and wakeup are not hitstun
+    public bool GetIsCurrentlyInHitstun(int player)
+    {
+        if (player is < 0 or > 1)
+            throw new ArgumentException($"Player index is invalid : {player}");
+        return (Read<int>(_pointerCollection.Players[player].HitstunRelatedFlagPtr) & 0x4) != 0;
+    }
+    public bool GetWillBeInHitstunNextFrame(int player)
+    {
+        if (player is < 0 or > 1)
+            throw new ArgumentException($"Player index is invalid : {player}");
+        return (Read<int>(_pointerCollection.Players[player].HitstunRelatedFlagPtr) & 0x2) != 0;
+    }
+    public bool GetAreNormalsEnabled(int player)
+    {
+        if (player is < 0 or > 1)
+            throw new ArgumentException($"Player index is invalid : {player}");
+        return (Read<int>(_pointerCollection.Players[player].WhatCanDoFlagsPtr) & 0x1000) != 0;
+    }
+    public bool GetIsAirtechEnabled(int player)
+    {
+        if (player is < 0 or > 1)
+            throw new ArgumentException($"Player index is invalid : {player}");
             
         int flagValues = Read<int>(_pointerCollection.Players[player].TechRelatedFlagPtr);
         return (flagValues & 0x4) != 0;
     }
-    public int GetAirRecoverySetting() => Read<int>(_pointerCollection.AirRecoverySettingPtr);
-    public bool WriteAirRecoverySetting(int setting) => Write(_pointerCollection.AirRecoverySettingPtr, setting);
+    public RecoveryValues GetAirRecoverySetting() => (RecoveryValues)Read<int>(_pointerCollection.AirRecoverySettingPtr);
+    public StunRecoveryValues GetStunRecoverySetting() => (StunRecoveryValues)Read<int>(_pointerCollection.StunRecoverySettingPtr);
+    public bool WriteAirRecoverySetting(RecoveryValues setting) => Write(_pointerCollection.AirRecoverySettingPtr, (int)setting);
     public bool GuaranteeChargeInput(int player)
     {
+        if (player is < 0 or > 1)
+            throw new ArgumentException($"Player index is invalid : {player}");
+        
         var data = _pointerCollection.InputRingBuffers[player];
         ushort curIndex = Read<ushort>(data.IndexPtr);
         MemoryPointer framesHeldBase = data.FramesHeldBasePtr;
@@ -126,6 +153,186 @@ public class MemoryReader : IMemoryReader
         result = result && Write(inputsBase.OffsetBy(curIndex * 2), input);
         return result;
     }
+    public int GetLifetimeCounter(int player)
+    {
+        if (player is < 0 or > 1)
+            throw new ArgumentException($"Player index is invalid : {player}");
+        return Read<int>(_pointerCollection.Players[player].LifetimeCounterPtr);
+    }
+    public int GetDizzyMashAmountLeft(int player)
+    {
+        if (player is < 0 or > 1)
+            throw new ArgumentException($"Player index is invalid : {player}");
+        return Read<int>(_pointerCollection.Players[player].DizzyMashAmountLeftPtr);
+    }
+    // For RC this is the current stage of the RC animation: 0 startup, 1 started up, 2 may advance animation during superfreeze, 3 finished RC
+    public int GetBBScrVar(int player)
+    {
+        if (player is < 0 or > 1)
+            throw new ArgumentException($"Player index is invalid : {player}");
+        return Read<int>(_pointerCollection.Players[player].BBScrVarPtr);
+    }
+    public int GetBBScrVar4(int player)
+    {
+        if (player is < 0 or > 1)
+            throw new ArgumentException($"Player index is invalid : {player}");
+        return Read<int>(_pointerCollection.Players[player].BBScrVar4Ptr);
+    }
+    public int GetBBScrVar5(int player)
+    {
+        if (player is < 0 or > 1)
+            throw new ArgumentException($"Player index is invalid : {player}");
+        return Read<int>(_pointerCollection.Players[player].BBScrVar5Ptr);
+    }
+    public int GetCmnActIndex(int player)
+    {
+        if (player is < 0 or > 1)
+            throw new ArgumentException($"Player index is invalid : {player}");
+        return Read<int>(_pointerCollection.Players[player].CmnActIndexPtr);
+    }
+    public string GetGotoLabelRequest(int player)
+    {
+        if (player is < 0 or > 1)
+            throw new ArgumentException($"Player index is invalid : {player}");
+        return ReadString(_pointerCollection.Players[player].GotoLabelRequestStringPtr, 32);
+    }
+    public int GetCurrentHitEffect(int player)
+    {
+        if (player is < 0 or > 1)
+            throw new ArgumentException($"Player index is invalid : {player}");
+        return Read<int>(_pointerCollection.Players[player].CurrentHitEffectPtr);
+    }
+    public int GetStaggerRelatedValue(int player)
+    {
+        if (player is < 0 or > 1)
+            throw new ArgumentException($"Player index is invalid : {player}");
+        return Read<int>(_pointerCollection.Players[player].StaggerRelatedValuePtr);
+    }
+    public bool IsBattle()
+    {
+        return Read<int>(_pointerCollection.AswEnginePtr) != 0;
+    }
+    public bool GetWillBeInBlockstunNextFrame(int player)
+    {
+        if (player is < 0 or > 1)
+            throw new ArgumentException($"Player index is invalid : {player}");
+        return (Read<int>(_pointerCollection.Players[player].HitstunRelatedFlagPtr) & 0x1000000) != 0;
+    }
+    public BlockTypes GetDummyBlockType(int player)
+    {
+        if (player is < 0 or > 1)
+            throw new ArgumentException($"Player index is invalid : {player}");
+        return Read<int>(_pointerCollection.DummyBlockTypes[player]) switch
+        {
+            1 => BlockTypes.InstantBlock,
+            2 => BlockTypes.FaultlessDefense,
+            _ => BlockTypes.Normal,
+        };
+    }
+    public bool GetIsSuccessfulIB(int player)
+    {
+        if (player is < 0 or > 1)
+            throw new ArgumentException($"Player index is invalid : {player}");
+        return (Read<int>(_pointerCollection.Players[player].HitstunRelatedFlagPtr) & 0x800000) != 0;
+    }
+    public StanceValues GetStanceSetting()
+    {
+        return (StanceValues)Read<int>(_pointerCollection.StanceSettingPtr);
+    }
+    public void WriteStanceSetting(StanceValues setting)
+    {
+        Write(_pointerCollection.StanceSettingPtr, (int)setting);
+    }
+    public BlockSettingsValues GetBlockSettings()
+    {
+        return (BlockSettingsValues)Read<int>(_pointerCollection.BlockSettingsPtr);
+    }
+    public void WriteBlockSettings(BlockSettingsValues setting)
+    {
+        Write(_pointerCollection.BlockSettingsPtr, (int)setting);
+    }
+    public BlockSwitchingValues GetBlockSwitching()
+    {
+        return (BlockSwitchingValues)Read<int>(_pointerCollection.BlockSwitchingPtr);
+    }
+    public void WriteBlockSwitching(BlockSwitchingValues setting)
+    {
+        Write(_pointerCollection.BlockSwitchingPtr, (int)setting);
+    }
+    public BlockTypeValues GetBlockTypeSetting()
+    {
+        return (BlockTypeValues)Read<int>(_pointerCollection.BlockTypeSettingPtr);
+    }
+    public void WriteBlockTypeSetting(BlockTypeValues setting)
+    {
+        Write(_pointerCollection.BlockTypeSettingPtr, (int)setting);
+    }
+    public ForcedBlockStance GetForcedBlockStance(int player)
+    {
+        if (player is < 0 or > 1)
+            throw new ArgumentException($"Player index is invalid : {player}");
+        int bitfield = Read<int>(_pointerCollection.Players[player].StanceRelatedFlagsPtr);
+        if ((bitfield & 0x80) != 0) return ForcedBlockStance.Standing;
+        if ((bitfield & 0x100) != 0) return ForcedBlockStance.Crouching;
+        return ForcedBlockStance.None;
+    }
+    public bool GetIsAirborne(int player)
+    {
+        if (player is < 0 or > 1)
+            throw new ArgumentException($"Player index is invalid : {player}");
+        return !(
+            Read<int>(_pointerCollection.Players[player].YPtr) == 0
+            && Read<int>(_pointerCollection.Players[player].SpeedYPtr) == 0
+        );
+        
+    }
+    public BlockTypes DetermineBlockType(int player)
+    {
+        if (player is < 0 or > 1)
+            throw new ArgumentException($"Player index is invalid : {player}");
+        
+        if (IsHoldingFD(player))
+        {
+            return BlockTypes.FaultlessDefense;
+        }
+        if (GetIsSuccessfulIB(player))
+        {
+            return BlockTypes.InstantBlock;
+        }
+        return BlockTypes.Normal;
+    }
+    public bool IsHoldingFD(int player)
+    {
+        if (player is < 0 or > 1)
+            throw new ArgumentException($"Player index is invalid : {player}");
+        
+        if (IsIdleDummy(player))
+        {
+            return GetDummyBlockType(player) == BlockTypes.FaultlessDefense;
+        }
+        return (Read<int>(_pointerCollection.Players[player].HitstunRelatedFlagPtr) & 0x20000000) != 0;
+    }
+    public bool IsHoldingBlock(int player)
+    {
+        if (player is < 0 or > 1)
+            throw new ArgumentException($"Player index is invalid : {player}");
+        return (Read<int>(_pointerCollection.Players[player].HitstunRelatedFlagPtr) & 0x2000000) != 0;
+    }
+    public bool IsIdleDummy(int player)
+    {
+        if (player is < 0 or > 1)
+            throw new ArgumentException($"Player index is invalid : {player}");
+        
+        int playerSide = GetPlayerSide();
+        var dummyMode = GetDummyMode();
+        return dummyMode switch
+        {
+            TrainingDummyRecordingMode.Idle => player == 1 - playerSide,
+            TrainingDummyRecordingMode.Controlling or TrainingDummyRecordingMode.Recording => player == playerSide,
+            _ => false
+        };
+    }
+    
 
     public SlotInput ReadInputFromSlot(int slotNumber)
     {
@@ -157,7 +364,7 @@ public class MemoryReader : IMemoryReader
     public string ReadAnimationString(int player)
     {
         if (player is < 0 or > 1)
-            return string.Empty;
+            throw new ArgumentException($"Player index is invalid : {player}");
         return ReadString(_pointerCollection.Players[player].AnimStringPtr, 32);
     }
 
@@ -218,11 +425,11 @@ public class MemoryReader : IMemoryReader
     }
     public bool IsUserControllingDummy()
     {
-        int dummyMode = Read<int>(_pointerCollection.DummyModePtr);
-        return dummyMode == 1  // CONTROLLING
-                || dummyMode == 2  // RECORDING
-                || dummyMode == 4  // "Press Enter/Start on the controller you wish to use."
-                || dummyMode == 5; // CONTROLLER
+        TrainingDummyRecordingMode dummyMode = (TrainingDummyRecordingMode)Read<int>(_pointerCollection.DummyModePtr);
+        return dummyMode == TrainingDummyRecordingMode.Controlling
+                || dummyMode == TrainingDummyRecordingMode.Recording
+                || dummyMode == TrainingDummyRecordingMode.SettingController
+                || dummyMode == TrainingDummyRecordingMode.Controller;
     }
 
     public bool IsTrainingMode()
@@ -369,8 +576,21 @@ public class MemoryReader : IMemoryReader
             public readonly MemoryPointer AnimFramePtr;
             public readonly MemoryPointer SlowdownFramesPtr;
             public readonly MemoryPointer WhatCanDoFlagsPtr;
-            public readonly MemoryPointer TimeUntilTechPtr;
+            public readonly MemoryPointer HitstunPtr;
             public readonly MemoryPointer TechRelatedFlagPtr;
+            public readonly MemoryPointer HitstunRelatedFlagPtr;
+            public readonly MemoryPointer LifetimeCounterPtr;
+            public readonly MemoryPointer DizzyMashAmountLeftPtr;
+            public readonly MemoryPointer BBScrVarPtr;
+            public readonly MemoryPointer BBScrVar4Ptr;
+            public readonly MemoryPointer BBScrVar5Ptr;
+            public readonly MemoryPointer CmnActIndexPtr;
+            public readonly MemoryPointer GotoLabelRequestStringPtr;
+            public readonly MemoryPointer CurrentHitEffectPtr;
+            public readonly MemoryPointer StaggerRelatedValuePtr;
+            public readonly MemoryPointer StanceRelatedFlagsPtr;
+            public readonly MemoryPointer YPtr;
+            public readonly MemoryPointer SpeedYPtr;
 
             public PlayerData(int matchPtrAddr, int index)
             {
@@ -386,8 +606,21 @@ public class MemoryReader : IMemoryReader
                 AnimFramePtr = new MemoryPointer(matchPtrAddr, playerOffset + 0x130); // 0x134? Both work for now
                 SlowdownFramesPtr = new MemoryPointer(matchPtrAddr, playerOffset + 0x261fc);
                 WhatCanDoFlagsPtr = new MemoryPointer(matchPtrAddr, playerOffset + 0x4d3c);  // Normally holds B001716E
-                TimeUntilTechPtr = new MemoryPointer(matchPtrAddr, playerOffset + 0x9808);
+                HitstunPtr = new MemoryPointer(matchPtrAddr, playerOffset + 0x9808);
                 TechRelatedFlagPtr = new MemoryPointer(matchPtrAddr, playerOffset + 0x4d40);
+                HitstunRelatedFlagPtr = new MemoryPointer(matchPtrAddr, playerOffset + 0x23c);
+                LifetimeCounterPtr = new MemoryPointer(matchPtrAddr, playerOffset + 0x18);
+                DizzyMashAmountLeftPtr = new MemoryPointer(matchPtrAddr, playerOffset + 0x9fcc);
+                BBScrVarPtr = new MemoryPointer(matchPtrAddr, playerOffset + 0x24df4);
+                BBScrVar4Ptr = new MemoryPointer(matchPtrAddr, playerOffset + 0x24e00);
+                BBScrVar5Ptr = new MemoryPointer(matchPtrAddr, playerOffset + 0x24e04);
+                CmnActIndexPtr = new MemoryPointer(matchPtrAddr, playerOffset + 0xa01c);
+                GotoLabelRequestStringPtr = new MemoryPointer(matchPtrAddr, playerOffset + 0x2474 + 0x24);
+                CurrentHitEffectPtr = new MemoryPointer(matchPtrAddr, playerOffset + 0x24db0);
+                StaggerRelatedValuePtr = new MemoryPointer(matchPtrAddr, playerOffset + 0x262dc);
+                StanceRelatedFlagsPtr = new MemoryPointer(matchPtrAddr, playerOffset + 0x12c);
+                YPtr = new MemoryPointer(matchPtrAddr, playerOffset + 0x250);
+                SpeedYPtr = new MemoryPointer(matchPtrAddr, playerOffset + 0x300);
             }
         };
         public class InputRingBufferData
@@ -428,7 +661,14 @@ public class MemoryReader : IMemoryReader
         public MemoryPointer EngineTickCountPtr { get; private set; } = null!;
         public MemoryPointer AswEngineTickCountPtr { get; private set; } = null!;
         public MemoryPointer MatchRunningPtr { get; private set; } = null!;
+        public MemoryPointer StanceSettingPtr { get; private set; } = null!;
+        public MemoryPointer BlockSettingsPtr { get; private set; } = null!;
+        public MemoryPointer BlockSwitchingPtr { get; private set; } = null!;
+        public MemoryPointer BlockTypeSettingPtr { get; private set; } = null!;
         public MemoryPointer AirRecoverySettingPtr { get; private set; } = null!;
+        public MemoryPointer StunRecoverySettingPtr { get; private set; } = null!;
+        public MemoryPointer AswEnginePtr { get; private set; } = null!;
+        public ImmutableArray<MemoryPointer> DummyBlockTypes { get; private set; }
 
         private readonly Process _process;
         private readonly MemoryReader _memoryReader;
@@ -494,11 +734,22 @@ public class MemoryReader : IMemoryReader
             const string engineTickCountPattern = "dQWD+AV2FPIPEEcQ";
             EngineTickCountPtr = new MemoryPointer(_memoryReader.Read<int>(textAddr - 4 + FindPatternOffset(text, engineTickCountPattern)));
             
+            AswEnginePtr = new MemoryPointer(matchPtrAddr);
             AswEngineTickCountPtr = new MemoryPointer(matchPtrAddr, 0x1c6f70);
             MatchRunningPtr = new MemoryPointer(matchPtrAddr, 0x1c7320);
 
             const string airRecoverySettingPattern = "i0wkBIPB7jPAg/kVD4e0AAAA";
             AirRecoverySettingPtr = new MemoryPointer(_memoryReader.Read<int>(textAddr + 0x9A + FindPatternOffset(text, airRecoverySettingPattern)));
+            int trainingSettingsBase = (int)AirRecoverySettingPtr.Pointer - 0x15 * 4;
+            StanceSettingPtr = new MemoryPointer(trainingSettingsBase + 0x11 * 4);
+            BlockSettingsPtr = new MemoryPointer(trainingSettingsBase + 0x12 * 4);
+            BlockSwitchingPtr = new MemoryPointer(trainingSettingsBase + 0x13 * 4);
+            BlockTypeSettingPtr = new MemoryPointer(trainingSettingsBase + 0x14 * 4);
+            StunRecoverySettingPtr = new MemoryPointer(trainingSettingsBase + 0x17 * 4);
+            
+            DummyBlockTypes = ImmutableArray.Create(
+                new MemoryPointer(trainingStructAddr + 0x670),
+                new MemoryPointer(trainingStructAddr + 0x674));
             
             InputRingBuffers = ImmutableArray.Create(
                 new InputRingBufferData(matchPtrAddr, 0),

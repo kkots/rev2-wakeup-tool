@@ -16,34 +16,48 @@
                     <RowDefinition/>
                     <RowDefinition/>
                     <RowDefinition/>
+                    <RowDefinition/>
                 </Grid.RowDefinitions>
                 <TextBlock TextWrapping="Wrap">
                     <TextBlock.Text>
                         <MultiBinding Converter="{StaticResource ComboEventConverter}">
-                            <Binding Path="MinComboCount" ElementName="Control"/>
-                            <Binding Path="MaxComboCount" ElementName="Control"/>
+                            <Binding Path="ControlData.MinComboCount" ElementName="Control"/>
+                            <Binding Path="ControlData.MaxComboCount" ElementName="Control"/>
                         </MultiBinding>
                     </TextBlock.Text>
                 </TextBlock>
-                <Slider Grid.Row="1" Value="{Binding ElementName=Control, Path=MinComboCount}" Minimum="1" Maximum="{Binding ElementName=Control, Path=MaxComboCount}"/>
-                <Slider Grid.Row="2" Value="{Binding ElementName=Control, Path=MaxComboCount}" Minimum="{Binding ElementName=Control, Path=MinComboCount}" Maximum="100"/>
+                <Slider Grid.Row="1" Value="{Binding ElementName=Control, Path=ControlData.MinComboCount}" Minimum="1" Maximum="{Binding ElementName=Control, Path=ControlData.MaxComboCount}"/>
+                <Slider Grid.Row="2" Value="{Binding ElementName=Control, Path=ControlData.MaxComboCount}" Minimum="{Binding ElementName=Control, Path=ControlData.MinComboCount}" Maximum="100"/>
+                <Grid Grid.Row="3">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Row="0" Grid.Column="0" Text="When hitstun..." VerticalAlignment="Center"/>
+                    <ComboBox Margin="5,0,0,0" Grid.Row="0" Grid.Column="1" ItemsSource="{Binding ElementName=Control, Path=EndsStartsTypes}" SelectedValue="{Binding ElementName=Control, Path=ControlData.ComboHitstunEndsStarts}"/>
+                </Grid>
             </Grid>
         </DataTemplate>
         <converters:AnimationEventConverter x:Key="AnimationEventConverter" />
         <DataTemplate x:Key="AnimationDataTemplate">
             <Grid>
                 <Grid.RowDefinitions>
-                    <RowDefinition/>
-                    <RowDefinition/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
                 <TextBlock TextWrapping="Wrap">
                     <TextBlock.Text>
                         <MultiBinding Converter="{StaticResource AnimationEventConverter}">
-                            <Binding Path="ShouldCheckWakingUp" ElementName="Control"/>
-                            <Binding Path="ShouldCheckWallSplat" ElementName="Control"/>
-                            <Binding Path="ShouldCheckAirTech" ElementName="Control"/>
-                            <Binding Path="ShouldCheckStartBlocking" ElementName="Control"/>
-                            <Binding Path="ShouldCheckBlockstunEnding" ElementName="Control"/>
+                            <Binding Path="ControlData.ShouldCheckWakingUp" ElementName="Control"/>
+                            <Binding Path="ControlData.ShouldCheckWallSplat" ElementName="Control"/>
+                            <Binding Path="ControlData.ShouldCheckAirTech" ElementName="Control"/>
+                            <Binding Path="ControlData.ShouldCheckStartBlocking" ElementName="Control"/>
+                            <Binding Path="ControlData.ShouldCheckBlockstunEnding" ElementName="Control"/>
+                            <Binding Path="ControlData.ShouldCheckHitstunStarting" ElementName="Control"/>
+                            <Binding Path="ControlData.ShouldCheckHitstunEnding" ElementName="Control"/>
                         </MultiBinding>
                     </TextBlock.Text>
                 </TextBlock>
@@ -53,11 +67,13 @@
                             <Setter Property="Margin" Value="5,5,5,5"/>
                         </Style>
                     </WrapPanel.Resources>
-                    <CheckBox Content="Waking up" IsChecked="{Binding ElementName=Control, Path=ShouldCheckWakingUp}"/>
-                    <CheckBox Content="Wallsplat recovering" IsChecked="{Binding ElementName=Control, Path=ShouldCheckWallSplat}"/>
-                    <CheckBox Content="Air Teching" IsChecked="{Binding ElementName=Control, Path=ShouldCheckAirTech}"/>
-                    <CheckBox Content="Start Blocking" IsChecked="{Binding ElementName=Control, Path=ShouldCheckStartBlocking}"/>
-                    <CheckBox Content="Blockstun Ends" IsChecked="{Binding ElementName=Control, Path=ShouldCheckBlockstunEnding}"/>
+                    <CheckBox Content="Waking up" IsChecked="{Binding ElementName=Control, Path=ControlData.ShouldCheckWakingUp}"/>
+                    <CheckBox Content="Wallsplat recovering" IsChecked="{Binding ElementName=Control, Path=ControlData.ShouldCheckWallSplat}"/>
+                    <CheckBox Content="Air Teching" IsChecked="{Binding ElementName=Control, Path=ControlData.ShouldCheckAirTech}"/>
+                    <CheckBox Content="Start Blocking" IsChecked="{Binding ElementName=Control, Path=ControlData.ShouldCheckStartBlocking}"/>
+                    <CheckBox Content="Blockstun Ends" IsChecked="{Binding ElementName=Control, Path=ControlData.ShouldCheckBlockstunEnding}"/>
+                    <CheckBox Content="Enters Hitstun" IsChecked="{Binding ElementName=Control, Path=ControlData.ShouldCheckHitstunStarting}"/>
+                    <CheckBox Content="Hitstun Ends" IsChecked="{Binding ElementName=Control, Path=ControlData.ShouldCheckHitstunEnding}"/>
                 </WrapPanel>
             </Grid>
         </DataTemplate>
@@ -65,7 +81,63 @@
             <TextBlock TextWrapping="Wrap" Text="You recover from tapping Blitz Shield"/>
         </DataTemplate>
         <converters:DelayAirRecoveryEventConverter x:Key="DelayAirRecoveryEventConverter" />
+        <converters:DelayAirRecoveryHitCountEventConverter x:Key="DelayAirRecoveryHitCountEventConverter" />
         <DataTemplate x:Key="DelayAirRecoveryDataTemplate">
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <Grid Margin="0,0,5,0">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    <TextBlock TextWrapping="Wrap">
+                        <TextBlock.Text>
+                            <MultiBinding Converter="{StaticResource DelayAirRecoveryEventConverter}">
+                                <Binding Path="ControlData.MinDelayAirRecoveryDelay" ElementName="Control"/>
+                                <Binding Path="ControlData.MaxDelayAirRecoveryDelay" ElementName="Control"/>
+                            </MultiBinding>
+                        </TextBlock.Text>
+                    </TextBlock>
+                    <Slider Grid.Row="1" Margin="0,3,0,0" Value="{Binding ElementName=Control, Path=ControlData.MinDelayAirRecoveryDelay}" Minimum="0" Maximum="{Binding ElementName=Control, Path=ControlData.MaxDelayAirRecoveryDelay}"/>
+                    <Slider Grid.Row="2" Margin="0,5,0,0" Value="{Binding ElementName=Control, Path=ControlData.MaxDelayAirRecoveryDelay}" Minimum="{Binding ElementName=Control, Path=ControlData.MinDelayAirRecoveryDelay}" Maximum="100"/>
+                    <Grid Grid.Row="3" Margin="0,8,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        <TextBlock TextWrapping="Wrap" Text="Tech direction:" VerticalAlignment="Center"/>
+                        <ComboBox Grid.Column="1" Margin="5,5,0,5" ItemsSource="{Binding ElementName=Control, Path=AirRecoveryTypesList}" SelectedValue="{Binding ElementName=Control, Path=ControlData.SelectedAirRecoveryType}" VerticalAlignment="Center"/>
+                    </Grid>
+                    <StackPanel Grid.Row="4" Orientation="Horizontal" Margin="0,5,0,0">
+                        <TextBlock Text="Will tech with "/>
+                        <ContentControl Content="{Binding ElementName=Control, Path=ControlData.DelayTechProbability, Mode=OneWay}"/>
+                        <TextBlock Text="% probability"/>
+                    </StackPanel>
+                    <Slider Grid.Row="5" Margin="0,3,0,0" Value="{Binding ElementName=Control, Path=ControlData.DelayTechProbability}" Minimum="0" Maximum="100"/>
+                    <TextBlock Grid.Row="6" TextWrapping="Wrap" Margin="0,8,0,0">
+                        <TextBlock.Text>
+                            <MultiBinding Converter="{StaticResource DelayAirRecoveryHitCountEventConverter}">
+                                <Binding Path="ControlData.DelayAirRecoveryMinHit" ElementName="Control"/>
+                                <Binding Path="ControlData.DelayAirRecoveryMaxHit" ElementName="Control"/>
+                            </MultiBinding>
+                        </TextBlock.Text>
+                    </TextBlock>
+                    <Slider Grid.Row="7" Margin="0,3,0,0" Value="{Binding ElementName=Control, Path=ControlData.DelayAirRecoveryMinHit}" Minimum="1" Maximum="{Binding ElementName=Control, Path=ControlData.DelayAirRecoveryMaxHit}"/>
+                    <Slider Grid.Row="8" Margin="0,5,0,0" Value="{Binding ElementName=Control, Path=ControlData.DelayAirRecoveryMaxHit}" Minimum="{Binding ElementName=Control, Path=ControlData.DelayAirRecoveryMinHit}" Maximum="100"/>
+                </Grid>
+            </ScrollViewer>
+        </DataTemplate>
+        <converters:PeriodicEventConverter x:Key="PeriodicEventConverter" />
+        <DataTemplate x:Key="PeriodicDataTemplate">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition/>
@@ -73,30 +145,77 @@
                     <RowDefinition/>
                     <RowDefinition/>
                 </Grid.RowDefinitions>
-                <TextBlock TextWrapping="Wrap">
+                <TextBlock Grid.Row="0" TextWrapping="Wrap">
                     <TextBlock.Text>
-                        <MultiBinding Converter="{StaticResource DelayAirRecoveryEventConverter}">
-                            <Binding Path="MinDelayAirRecoveryDelay" ElementName="Control"/>
-                            <Binding Path="MaxDelayAirRecoveryDelay" ElementName="Control"/>
+                        <MultiBinding Converter="{StaticResource PeriodicEventConverter}">
+                            <Binding Path="ControlData.MinPeriodic" ElementName="Control"/>
+                            <Binding Path="ControlData.MaxPeriodic" ElementName="Control"/>
                         </MultiBinding>
                     </TextBlock.Text>
                 </TextBlock>
-                <Slider Grid.Row="1" Value="{Binding ElementName=Control, Path=MinDelayAirRecoveryDelay}" Minimum="0" Maximum="{Binding ElementName=Control, Path=MaxDelayAirRecoveryDelay}"/>
-                <Slider Grid.Row="2" Value="{Binding ElementName=Control, Path=MaxDelayAirRecoveryDelay}" Minimum="{Binding ElementName=Control, Path=MinDelayAirRecoveryDelay}" Maximum="100"/>
+                <Slider Grid.Row="1" Value="{Binding ElementName=Control, Path=ControlData.MinPeriodic}" Minimum="1" Maximum="{Binding ElementName=Control, Path=ControlData.MaxPeriodic}"/>
+                <Slider Grid.Row="2" Value="{Binding ElementName=Control, Path=ControlData.MaxPeriodic}" Minimum="{Binding ElementName=Control, Path=ControlData.MinPeriodic}" Maximum="360"/>
+                <CheckBox Grid.Row="3" Content="Only when opponent is idle" IsChecked="{Binding ElementName=Control, Path=ControlData.PeriodicallyOnlyWhenIdle}"/>
+            </Grid>
+        </DataTemplate>
+        <converters:BlockedACertainHitEventConverter x:Key="BlockedACertainHitEventConverter" />
+        <converters:BlockTypeToStringConverter x:Key="BlockTypeToStringConverter" />
+        <DataTemplate x:Key="BlockedACertainHitDataTemplate">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition/>
+                    <RowDefinition/>
+                    <RowDefinition/>
+                    <RowDefinition/>
+                    <RowDefinition/>
+                    <RowDefinition/>
+                </Grid.RowDefinitions>
+                <TextBlock Grid.Row="0" TextWrapping="Wrap" Visibility="{Binding ElementName=Control, Path=ControlData.UseBlockSwitching, Converter={StaticResource AntiVisibilityCollapsedConverter}}">
+                    <TextBlock.Text>
+                        <MultiBinding Converter="{StaticResource BlockedACertainHitEventConverter}">
+                            <Binding Path="ControlData.MinHitNumber" ElementName="Control"/>
+                            <Binding Path="ControlData.MaxHitNumber" ElementName="Control"/>
+                        </MultiBinding>
+                    </TextBlock.Text>
+                </TextBlock>
+                <Slider Grid.Row="1" Value="{Binding ElementName=Control, Path=ControlData.MinHitNumber}" Minimum="1" Maximum="{Binding ElementName=Control, Path=ControlData.MaxHitNumber}" Visibility="{Binding ElementName=Control, Path=ControlData.UseBlockSwitching, Converter={StaticResource AntiVisibilityCollapsedConverter}}"/>
+                <Slider Grid.Row="2" Value="{Binding ElementName=Control, Path=ControlData.MaxHitNumber}" Minimum="{Binding ElementName=Control, Path=ControlData.MinHitNumber}" Maximum="100" Visibility="{Binding ElementName=Control, Path=ControlData.UseBlockSwitching, Converter={StaticResource AntiVisibilityCollapsedConverter}}"/>
                 <Grid Grid.Row="3">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition Width="*"/>
-                    </Grid.ColumnDefinitions>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
-                    <TextBlock TextWrapping="Wrap" Text="Tech direction:" VerticalAlignment="Center"/>
-                    <ComboBox Grid.Column="1" Margin="5,5,0,5" ItemsSource="{Binding ElementName=Control, Path=AirRecoveryTypesList}" SelectedValue="{Binding ElementName=Control, Path=SelectedAirRecoveryType}" VerticalAlignment="Center"/>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Row="0" Grid.Column="0" Text="When blockstun..." VerticalAlignment="Center"/>
+                    <ComboBox Margin="5,0,0,0" Grid.Row="0" Grid.Column="1" ItemsSource="{Binding ElementName=Control, Path=EndsStartsTypes}" SelectedValue="{Binding ElementName=Control, Path=ControlData.BlockstunEndsStartsFilter}"/>
                 </Grid>
+                <Grid Grid.Row="4">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Row="0" Grid.Column="0" Text="Only on block type:" VerticalAlignment="Center"/>
+                    <ComboBox Margin="5,0,0,0" Grid.Row="0" Grid.Column="1" ItemsSource="{Binding ElementName=Control, Path=BlockTypes, Converter={StaticResource BlockTypeToStringConverter}}" SelectedValue="{Binding ElementName=Control, Path=ControlData.BlockTypeFilter, Converter={StaticResource BlockTypeToStringConverter}}"/>
+                </Grid>
+                <CheckBox Grid.Row="5" VerticalAlignment="Center" IsChecked="{Binding ElementName=Control, Path=ControlData.UseBlockSwitching}">
+                    <ContentControl>
+                        <TextBlock Text="Only on hits from 'Block Switching' tab marked with '!'" TextWrapping="Wrap"/>
+                    </ContentControl>
+                </CheckBox>
             </Grid>
         </DataTemplate>
-        <local:EventControlDataTemplateSelector x:Key="EventControlDataTemplateSelector" ComboDataTemplate="{StaticResource ComboDataTemplate}" AnimationDataTemplate="{StaticResource AnimationDataTemplate}" SimulatedRoundstartDataTemplate="{StaticResource SimulatedRoundstartDataTemplate}" DelayAirRecoveryDataTemplate="{StaticResource DelayAirRecoveryDataTemplate}" />
+        <local:EventControlDataTemplateSelector x:Key="EventControlDataTemplateSelector"
+            ComboDataTemplate="{StaticResource ComboDataTemplate}"
+            AnimationDataTemplate="{StaticResource AnimationDataTemplate}"
+            SimulatedRoundstartDataTemplate="{StaticResource SimulatedRoundstartDataTemplate}"
+            DelayAirRecoveryDataTemplate="{StaticResource DelayAirRecoveryDataTemplate}"
+            PeriodicDataTemplate="{StaticResource PeriodicDataTemplate}"
+            BlockedACertainHitDataTemplate="{StaticResource BlockedACertainHitDataTemplate}"/>
         <converters:ScenarioEventTypeToStringConverter x:Key="ScenarioEventTypeToStringConverter" />
     </local:NotifiedUserControl.Resources>
     <GroupBox Header="When">
@@ -105,8 +224,8 @@
                 <RowDefinition Height="Auto"/>
                 <RowDefinition/>
             </Grid.RowDefinitions>
-            <ComboBox ItemsSource="{Binding ElementName=Control, Path=ActionTypes, Converter={StaticResource ScenarioEventTypeToStringConverter}}" SelectedValue="{Binding ElementName=Control, Path=SelectedScenarioEvent, Converter={StaticResource ScenarioEventTypeToStringConverter}}" VerticalAlignment="Center" Margin="0,5,0,5"/>
-            <ContentControl Grid.Row="1" Content="{Binding ElementName=Control, Path=SelectedScenarioEvent}" ContentTemplateSelector="{StaticResource EventControlDataTemplateSelector}"/>
+            <ComboBox ItemsSource="{Binding ElementName=Control, Path=ActionTypes, Converter={StaticResource ScenarioEventTypeToStringConverter}}" SelectedValue="{Binding ElementName=Control, Path=ControlData.SelectedScenarioEvent, Converter={StaticResource ScenarioEventTypeToStringConverter}}" VerticalAlignment="Center" Margin="0,5,0,5"/>
+            <ContentControl Grid.Row="1" Content="{Binding ElementName=Control, Path=ControlData.SelectedScenarioEvent}" ContentTemplateSelector="{StaticResource EventControlDataTemplateSelector}"/>
         </Grid>
         
     </GroupBox>

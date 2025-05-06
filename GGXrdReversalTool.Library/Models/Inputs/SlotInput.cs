@@ -22,7 +22,7 @@ public class SlotInput
         if (IsBytesInput(content))
         {
             var bytes = content.Split(",").Select(x => byte.Parse(x, NumberStyles.HexNumber)).ToList();
-            _rawInputText = new SlotInput(bytes).CondensedInputListText.Aggregate((a, b) => $"{a},{b}");
+            _rawInputText = string.Join(",", new SlotInput(bytes).CondensedInputListText);
         }
         else
         {
@@ -45,9 +45,9 @@ public class SlotInput
             inputShorts.Add(value);
         }
 
-        var input = inputShorts
-            .Select(x => SingleInputParse(x, isP2))
-            .Aggregate((a, b) => $"{a},{b}");
+        var input = string.Join(",",
+            inputShorts
+            .Select(x => SingleInputParse(x, isP2)));
         _rawInputText = input;
     }
 
@@ -57,7 +57,7 @@ public class SlotInput
 
     public IEnumerable<string> ExpandedInputList => GetExpandedFrameInputList(_rawInputText);
     public IEnumerable<string> CondensedInputListText => GetCondensedFrameInputListText(_rawInputText);
-    public string CondensedInputText => GetCondensedFrameInputListText(_rawInputText).Aggregate((a, b) => $"{a},{b}");
+    public string CondensedInputText => string.Join(",", GetCondensedFrameInputListText(_rawInputText));
     public IEnumerable<CondensedInput> CondensedInputList => GetCondensedFrameInputList(_rawInputText);
     public IEnumerable<ushort> Content => GetContent(_rawInputText);
 
